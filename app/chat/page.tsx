@@ -3,10 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-<<<<<<< HEAD
-=======
 import EmojiPicker from "emoji-picker-react"
->>>>>>> 8c01869 (Chat Page 99% Completed)
 import { Sidebar } from "@/components/sidebar"
 import { TopNavbar } from "@/components/top-navbar"
 import { Button } from "@/components/ui/button"
@@ -21,10 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-<<<<<<< HEAD
-import { toast } from "sonner"
-import { StudentProfilePopup } from "@/components/student-profile-popup"
-=======
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +32,6 @@ import { toast } from "sonner"
 import { StudentProfilePopup } from "@/components/student-profile-popup"
 import { GroupDetailsPopup } from "./components/GroupDetailsPopup"
 import { AddMemberDialog } from "./components/AddMemberDialog"
->>>>>>> 8c01869 (Chat Page 99% Completed)
 import {
   Send,
   Search,
@@ -73,14 +65,10 @@ import {
   Settings,
   Loader2,
   FileText,
-<<<<<<< HEAD
-  MessageCircle
-=======
   MessageCircle,
   LogOut,
   Check,
   CheckCheck
->>>>>>> 8c01869 (Chat Page 99% Completed)
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -96,21 +84,15 @@ interface ChatMessage {
   fileSize?: string
   fileUrl?: string
   reactions?: { emoji: string; count: number; users: string[] }[]
-<<<<<<< HEAD
-=======
   isRead?: boolean
->>>>>>> 8c01869 (Chat Page 99% Completed)
   replyTo?: number
   senderId?: string
   senderName?: string
   senderAvatar?: string
 }
 
-<<<<<<< HEAD
-=======
 const REACTION_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
 interface ChatContact {
   id: number
   conversationId?: number
@@ -128,13 +110,9 @@ interface ChatContact {
   studentId?: string
   branch?: string
   semester?: string
-<<<<<<< HEAD
-  role?: string // Added role field
-=======
   role?: string
   participants?: any[]
   description?: string // Added description field
->>>>>>> 8c01869 (Chat Page 99% Completed)
 }
 
 interface Student {
@@ -187,10 +165,6 @@ export default function ChatPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showClearChatModal, setShowClearChatModal] = useState(false)
   const [showGroupModal, setShowGroupModal] = useState(false)
-<<<<<<< HEAD
-  const [isAdmin, setIsAdmin] = useState(true)
-  const [showDisconnectedAlert, setShowDisconnectedAlert] = useState(false)
-=======
   const [showGroupDetails, setShowGroupDetails] = useState(false)
   const [showAddMemberModal, setShowAddMemberModal] = useState(false)
   const [isLeavingGroup, setIsLeavingGroup] = useState(false)
@@ -209,7 +183,6 @@ export default function ChatPage() {
   // Dynamic import for GroupDetailsPopup to avoid circular deps or server/client issues if any (optional but good practice)
   // strict import is fine here since it's a component
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -375,10 +348,6 @@ export default function ChatPage() {
           }
         }
       )
-<<<<<<< HEAD
-      .subscribe()
-
-=======
       .on(
         'postgres_changes',
         {
@@ -464,7 +433,6 @@ export default function ChatPage() {
       .subscribe()
 
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
     // Subscribe to conversation updates (for last message)
     const conversationChannel = supabase
       .channel('chat-conversations')
@@ -479,16 +447,11 @@ export default function ChatPage() {
 
     return () => {
       supabase.removeChannel(messageChannel)
-<<<<<<< HEAD
-=======
       supabase.removeChannel(reactionChannel)
->>>>>>> 8c01869 (Chat Page 99% Completed)
       supabase.removeChannel(conversationChannel)
     }
   }, [currentUser, selectedContact])
 
-<<<<<<< HEAD
-=======
   // Fetch connection status for current group members
   useEffect(() => {
     const fetchMemberConnections = async () => {
@@ -523,7 +486,6 @@ export default function ChatPage() {
     fetchMemberConnections()
   }, [showGroupDetails, selectedContact, currentUser])
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
   const fetchConversations = async (userId: string) => {
     // Use new RPC to get all conversations (groups + 1-on-1)
     const { data, error } = await supabase.rpc('get_user_conversations', {
@@ -542,11 +504,7 @@ export default function ChatPage() {
       .map((conv: any) => {
         const isGroup = conv.is_group
         const lastMsg = conv.last_message
-<<<<<<< HEAD
-        const isPinned = false // Pinned logic needs update for groups if desired, simplistic for now
-=======
         const isPinned = conv.pinned_by ? conv.pinned_by.includes(userId) : false
->>>>>>> 8c01869 (Chat Page 99% Completed)
         const isDisconnected = false // Group logic doesn't really have 'disconnected' in same way
 
         let displayName = conv.name
@@ -597,19 +555,12 @@ export default function ChatPage() {
           branch: displayBranch,
           semester: displaySemester,
           isGroup: isGroup,
-<<<<<<< HEAD
-          memberCount: isGroup ? (conv.participants ? conv.participants.length : 0) : 2,
-          isPinned: isPinned,
-          isDisconnected: isDisconnected,
-          role: otherUserRole
-=======
           participants: conv.participants || [],
           memberCount: isGroup ? (conv.participants ? conv.participants.length : 0) : 2,
           isPinned: isPinned,
           isDisconnected: isDisconnected,
           role: otherUserRole,
           description: displayDesc // Mapped description
->>>>>>> 8c01869 (Chat Page 99% Completed)
         }
       })
 
@@ -641,13 +592,10 @@ export default function ChatPage() {
         sender:profiles!sender_id (
           full_name,
           avatar_url
-<<<<<<< HEAD
-=======
         ),
         message_reactions (
           user_id,
           reaction
->>>>>>> 8c01869 (Chat Page 99% Completed)
         )
       `)
       .eq('conversation_id', conversationId)
@@ -669,9 +617,6 @@ export default function ChatPage() {
       fileUrl: msg.file_url,
       senderId: msg.sender_id,
       senderName: msg.sender?.full_name || "Unknown",
-<<<<<<< HEAD
-      senderAvatar: msg.sender?.avatar_url
-=======
       senderAvatar: msg.sender?.avatar_url,
       isRead: msg.is_read,
       reactions: Object.values(
@@ -682,7 +627,6 @@ export default function ChatPage() {
           return acc
         }, {})
       )
->>>>>>> 8c01869 (Chat Page 99% Completed)
     }))
 
     setMessages(formattedMessages)
@@ -768,17 +712,6 @@ export default function ChatPage() {
       return
     }
 
-<<<<<<< HEAD
-    // Check if it's already in our local list
-    const existingLocal = contacts.find(c => c.conversationId === convId)
-    if (existingLocal) {
-      // Update local state to remove disconnected status
-      const updatedContact = { ...existingLocal, isDisconnected: false }
-      setContacts(contacts.map(c => c.conversationId === convId ? updatedContact : c))
-      setSelectedContact(updatedContact)
-    } else {
-      // Add to local list
-=======
     // Check if it's already in our local list (handle type mismatch just in case)
     const existingLocal = contacts.find(c => c.conversationId == convId)
 
@@ -789,7 +722,6 @@ export default function ChatPage() {
       setSelectedContact(updatedContact)
     } else {
       // Add a temporary optimistic contact
->>>>>>> 8c01869 (Chat Page 99% Completed)
       const newContact: ChatContact = {
         id: convId,
         conversationId: convId,
@@ -803,10 +735,6 @@ export default function ChatPage() {
         isGroup: false,
         isDisconnected: false
       }
-<<<<<<< HEAD
-      setContacts([newContact, ...contacts])
-      setSelectedContact(newContact)
-=======
 
       // We set this momentarily
       setSelectedContact(newContact)
@@ -819,7 +747,6 @@ export default function ChatPage() {
       // We can't easily access the *updated* state here due to closures, 
       // but fetchMessages will run due to selectedContact change and fill the chat.
       // The Sidebar will be updated by fetchConversations.
->>>>>>> 8c01869 (Chat Page 99% Completed)
     }
     setShowNewChatModal(false)
     toast.success(`Started chat with ${student.name}`)
@@ -830,10 +757,7 @@ export default function ChatPage() {
 
     const content = newMessage
     setNewMessage("") // Clear input immediately
-<<<<<<< HEAD
-=======
     setShowEmojiPicker(false) // Close emoji picker
->>>>>>> 8c01869 (Chat Page 99% Completed)
 
     const { data: messageData, error: messageError } = await supabase
       .from('messages')
@@ -909,8 +833,6 @@ export default function ChatPage() {
     }
   }
 
-<<<<<<< HEAD
-=======
   const handleLeaveGroup = () => {
     if (!selectedContact || !currentUser) return
     setShowLeaveDialog(true)
@@ -952,7 +874,6 @@ export default function ChatPage() {
     }
   }
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
 
   // Helpers
   const getInitials = (name: string) => {
@@ -996,15 +917,9 @@ export default function ChatPage() {
   )
 
   // Other UI handlers (simplified for now)
-<<<<<<< HEAD
-  const handleEmojiClick = (emoji: string) => {
-    setNewMessage(prev => prev + emoji)
-    setShowEmojiPicker(false)
-=======
   // Modified to allow multiple emojis without closing
   const handleEmojiClick = (emojiData: any) => {
     setNewMessage(prev => prev + emojiData.emoji)
->>>>>>> 8c01869 (Chat Page 99% Completed)
   }
 
   const toggleEmojiPicker = () => setShowEmojiPicker(!showEmojiPicker)
@@ -1170,8 +1085,6 @@ export default function ChatPage() {
     }
   }
 
-<<<<<<< HEAD
-=======
   const handleAddMembers = async (newMemberIds: string[]) => {
     if (!selectedContact || !currentUser) return
 
@@ -1286,7 +1199,6 @@ export default function ChatPage() {
     } as any)
   }
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
   const handleStudentInfoClick = async (targetUserId?: string) => {
     // Determine the ID to fetch
     // If targetUserId is passed, use it (Group member click)
@@ -1363,8 +1275,6 @@ export default function ChatPage() {
     setSelectedStudentInfo(null)
   }
 
-<<<<<<< HEAD
-=======
   const handleUpdateGroup = async (name: string, description: string, avatarBlob: Blob | null) => {
     if (!selectedContact?.conversationId || !currentUser) return
 
@@ -1428,7 +1338,6 @@ export default function ChatPage() {
     }
   }
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
   const handleDeleteChat = () => setShowDeleteModal(true)
   const confirmDeleteChat = async () => {
     if (!selectedContact?.conversationId) return
@@ -1566,8 +1475,6 @@ export default function ChatPage() {
     }
   }
 
-<<<<<<< HEAD
-=======
   const toggleReaction = async (messageId: number, emoji: string) => {
     if (!currentUser) return
 
@@ -1631,7 +1538,6 @@ export default function ChatPage() {
     }
   }
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1801,9 +1707,6 @@ export default function ChatPage() {
                       <div className="min-w-0 flex-1">
                         <h3
                           className="font-semibold flex items-center gap-2 text-sm truncate cursor-pointer hover:text-primary transition-colors"
-<<<<<<< HEAD
-                          onClick={handleStudentInfoClick}
-=======
                           onClick={() => {
                             if (selectedContact.isGroup) {
                               setShowGroupDetails(true)
@@ -1811,7 +1714,6 @@ export default function ChatPage() {
                               handleStudentInfoClick()
                             }
                           }}
->>>>>>> 8c01869 (Chat Page 99% Completed)
                         >
                           <span className="truncate">{selectedContact.name}</span>
                           {selectedContact.isGroup && (
@@ -1841,89 +1743,10 @@ export default function ChatPage() {
                         <MoreVertical className="w-4 h-4" />
                       </Button>
 
-<<<<<<< HEAD
-                      {/* Create Group Button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          fetchConnectedStudents() // Fetch students to select from
-                          setShowGroupModal(true)
-                        }}
-                      >
-                        <Users className="h-4 w-4" />
-                      </Button>
-=======
->>>>>>> 8c01869 (Chat Page 99% Completed)
 
                       {showDropdown && (
                         <div className="absolute right-0 top-10 bg-card border border-border rounded-lg shadow-lg z-50 w-48">
                           <div className="p-1">
-<<<<<<< HEAD
-                            {selectedContact?.role !== 'teacher' && (
-                              <button
-                                onClick={() => {
-                                  handleStudentInfoClick()
-                                  setShowDropdown(false)
-                                }}
-                                className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
-                              >
-                                <User className="w-4 h-4 mr-2" />
-                                View Profile
-                              </button>
-                            )}
-                            <button
-                              onClick={() => {
-                                handlePinChat()
-                                setShowDropdown(false)
-                              }}
-                              className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
-                            >
-                              <Pin className="w-4 h-4 mr-2" />
-                              {selectedContact.isPinned ? "Unpin Chat" : "Pin Chat"}
-                            </button>
-                            <button
-                              onClick={handleExportChat}
-                              className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Chat
-                            </button>
-                            <button
-                              onClick={() => {
-                                handleClearChat()
-                                setShowDropdown(false)
-                              }}
-                              className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Clear Chat History
-                            </button>
-                            {/* Hide Disconnect for Teachers AND for Students chatting with Teachers */}
-                            {(currentUser?.user_metadata?.role !== 'teacher' && selectedContact.role !== 'teacher') && (
-                              <button
-                                onClick={() => {
-                                  handleDisconnectStudent()
-                                  setShowDropdown(false)
-                                }}
-                                className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm text-destructive"
-                              >
-                                <UserMinus className="w-4 h-4 mr-2" />
-                                Disconnect
-                              </button>
-                            )}
-                            <button
-                              onClick={() => {
-                                handleDeleteChat()
-                                setShowDropdown(false)
-                              }}
-                              className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete Chat
-                            </button>
-=======
                             {selectedContact?.isGroup ? (
                               /* GROUP MENU */
                               <>
@@ -2044,7 +1867,6 @@ export default function ChatPage() {
                                 </button>
                               </>
                             )}
->>>>>>> 8c01869 (Chat Page 99% Completed)
                           </div>
                         </div>
                       )}
@@ -2084,11 +1906,7 @@ export default function ChatPage() {
                           )}
 
                           <div
-<<<<<<< HEAD
-                            className={`relative shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
-=======
                             className={`group relative shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
->>>>>>> 8c01869 (Chat Page 99% Completed)
                               ? "bg-slate-700 text-white rounded-2xl rounded-tr-sm"
                               : "bg-gray-200 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-sm"
                               } `}
@@ -2146,13 +1964,6 @@ export default function ChatPage() {
                               </div>
                             )}
 
-<<<<<<< HEAD
-                            {/* Timestamp */}
-                            <div className={`text-[10px] select-none text-right px-3 pb-1.5 -mt-1 ${message.type === 'image' ? 'absolute bottom-2 right-2 bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm' : ''
-                              } ${message.sender === "user" && message.type !== 'image' ? "text-slate-300" : "text-gray-500"
-                              } `}>
-                              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-=======
                             {/* Reactions Display */}
                             {!selectedContact?.isGroup && message.reactions && message.reactions.length > 0 && (
                               <div className="flex flex-wrap gap-1 px-2 pb-2 mt-1">
@@ -2204,7 +2015,6 @@ export default function ChatPage() {
                               {message.sender === "user" && !selectedContact?.isGroup && (
                                 message.isRead ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Check className="w-3 h-3" />
                               )}
->>>>>>> 8c01869 (Chat Page 99% Completed)
                             </div>
                           </div>
                         </div>
@@ -2215,11 +2025,7 @@ export default function ChatPage() {
                 </ScrollArea>
 
                 {/* Message Input */}
-<<<<<<< HEAD
-                <div className="p-2 sm:p-3 border-t border-border bg-card/30 flex-shrink-0">
-=======
                 <div className="relative p-2 sm:p-3 border-t border-border bg-card/30 flex-shrink-0">
->>>>>>> 8c01869 (Chat Page 99% Completed)
                   <div className="flex items-end space-x-2 min-w-0">
                     <div className="flex space-x-1 flex-shrink-0">
                       <Button
@@ -2245,10 +2051,7 @@ export default function ChatPage() {
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-<<<<<<< HEAD
-=======
                         onFocus={() => setShowEmojiPicker(false)}
->>>>>>> 8c01869 (Chat Page 99% Completed)
                         onKeyPress={handleKeyPress}
                         className="pr-10 h-9 min-w-0"
                       />
@@ -2271,22 +2074,6 @@ export default function ChatPage() {
 
                   {/* Emoji Picker */}
                   {showEmojiPicker && (
-<<<<<<< HEAD
-                    <div className="absolute bottom-full left-0 mb-2 p-2 bg-card border border-border rounded-lg shadow-lg z-10">
-                      <div className="grid grid-cols-8 gap-1">
-                        {["😀", "😂", "😍", "🥰", "😎", "🤔", "😢", "😡", "👍", "👎", "❤️", "🎉", "🔥", "💯", "✨", "🎯"].map((emoji) => (
-                          <Button
-                            key={emoji}
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-lg"
-                            onClick={() => handleEmojiClick(emoji)}
-                          >
-                            {emoji}
-                          </Button>
-                        ))}
-                      </div>
-=======
                     <div className="absolute bottom-16 right-4 z-20 shadow-xl rounded-xl">
                       <EmojiPicker
                         onEmojiClick={handleEmojiClick}
@@ -2296,7 +2083,6 @@ export default function ChatPage() {
                         skinTonesDisabled
                         previewConfig={{ showPreview: false }}
                       />
->>>>>>> 8c01869 (Chat Page 99% Completed)
                     </div>
                   )}
                 </div>
@@ -2337,8 +2123,6 @@ export default function ChatPage() {
         accept="image/*"
       />
 
-<<<<<<< HEAD
-=======
       {selectedContact && selectedContact.isGroup && (
         <GroupDetailsPopup
           isOpen={showGroupDetails}
@@ -2409,7 +2193,6 @@ export default function ChatPage() {
         isLoading={loadingCandidates}
       />
 
->>>>>>> 8c01869 (Chat Page 99% Completed)
       {/* New Chat Modal */}
       {
         showNewChatModal && (
