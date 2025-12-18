@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, MessageCircle, Search, UserPlus, UserCheck, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Users, MessageCircle, Search, UserPlus, UserCheck, CheckCircle, XCircle, Loader2, Filter } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { StudentProfilePopup } from "@/components/student-profile-popup"
@@ -23,17 +24,17 @@ interface SocialUser {
   role: string
   branch: string
   semester: string
-  status: "online" | "offline"
+  status: "online" | "offline" | "away"
   account_status?: string // Added
   bio: string
-  interests: string[]
-  followers: number
-  following: number
   email?: string
-  location?: string
-  visibility?: "institute" | "classmates"
   instituteCode?: string
   lastActive?: string
+  location?: string
+  enrollment?: string
+  studyStreak?: number
+  quizzesCompleted?: number
+  interests?: string[]
 }
 
 interface Connection {
@@ -59,7 +60,13 @@ const SocialPage = () => {
   const [isLoading, setIsLoading] = useState(true)
 
   const [globalSearch, setGlobalSearch] = useState("")
+  const [globalBranchFilter, setGlobalBranchFilter] = useState("all")
+  const [globalSemesterFilter, setGlobalSemesterFilter] = useState("all")
   const [teacherSearch, setTeacherSearch] = useState("")
+
+  // New filters
+  const [branchFilter, setBranchFilter] = useState("all")
+  const [semesterFilter, setSemesterFilter] = useState("all")
 
   const [classmates, setClassmates] = useState<SocialUser[]>([])
   const [teachers, setTeachers] = useState<SocialUser[]>([])
@@ -71,6 +78,8 @@ const SocialPage = () => {
 
   const [showAllClassmates, setShowAllClassmates] = useState(false)
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const [currentUserBranch, setCurrentUserBranch] = useState<string | null>(null)
+  const [currentUserSemester, setCurrentUserSemester] = useState<string | null>(null)
 
   const fetchData = async () => {
     try {
@@ -96,23 +105,25 @@ const SocialPage = () => {
         status: "offline", // TODO: Real status
         account_status: profile.account_status, // Map from DB
         bio: profile.bio || "No bio available",
-        interests: ["Coding", "AI"], // Mock interests
-        followers: Math.floor(Math.random() * 200), // Mock
-        following: Math.floor(Math.random() * 150), // Mock
         email: profile.email,
-        location: profile.location,
-        visibility: profile.visibility,
         instituteCode: profile.institute_code,
-        lastActive: profile.last_active
+        lastActive: profile.last_active,
+        location: profile.location,
+        enrollment: profile.enrollment_number,
+        studyStreak: profile.study_streak || 0,
+        quizzesCompleted: profile.quizzes_completed || 0,
+        interests: profile.interests || []
       }))
 
       setUsers(formattedUsers)
 
-      // Identify current user's role
+      // Identify current user's role and details
       if (user) {
         const myProfile = formattedUsers.find(u => u.id === user.id)
         if (myProfile) {
           setCurrentUserRole(myProfile.role)
+          setCurrentUserBranch(myProfile.branch) // Already formatted
+          setCurrentUserSemester(myProfile.semester)
         }
       }
 
@@ -157,14 +168,14 @@ const SocialPage = () => {
           semester: profile.semester || "1",
           status: "offline",
           bio: profile.bio || "",
-          interests: [],
-          followers: 0,
-          following: 0,
           email: profile.email,
-          location: profile.location,
-          visibility: profile.visibility,
           instituteCode: profile.institute_code,
-          lastActive: profile.last_active
+          lastActive: profile.last_active,
+          location: profile.location,
+          enrollment: profile.enrollment_number,
+          studyStreak: profile.study_streak || 0,
+          quizzesCompleted: profile.quizzes_completed || 0,
+          interests: profile.interests || []
         })
 
         const formattedConnections = connectionsData.map((c: any) => ({
@@ -180,6 +191,12 @@ const SocialPage = () => {
         setConnections(accepted)
         setFriendRequests(pendingReceived)
         setSentRequests(pendingSent)
+        setSentRequests(pendingSent)
+      } else if (user) {
+        // Even if no connections needed for teachers, we clear the arrays to be safe
+        setConnections([])
+        setFriendRequests([])
+        setSentRequests([])
       }
 
     } catch (error) {
@@ -219,13 +236,9 @@ const SocialPage = () => {
     }
   }, [supabase]) // Dependency changed from currentUser to supabase
 
-  // Filter users based on search query
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.branch.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.interests.some((interest) => interest.toLowerCase().includes(searchQuery.toLowerCase())),
-  )
+  // Filter users based on search query - DEPRECATED / UNUSED
+  // logic moved to specific filtered lists below
+
 
   const handleStudentInfoClick = (user: SocialUser) => {
     const studentData = {
@@ -236,27 +249,63 @@ const SocialPage = () => {
       status: user.status,
       branch: user.branch,
       semester: user.semester,
-      quizzesCompleted: 12, // Mock
-      studyStreak: 5, // Mock
-      connections: user.followers,
+      quizzesCompleted: user.quizzesCompleted || 0,
+      studyStreak: user.studyStreak || 0,
+      connections: 0, // Will be fetched by popup
       bio: user.bio,
-      location: user.location,
-      visibility: user.visibility,
       role: user.role,
       instituteCode: user.instituteCode,
-      lastActive: user.lastActive
+      lastActive: user.lastActive,
+      location: user.location,
+      enrollment: user.enrollment,
+      interests: user.interests
     }
     setSelectedStudentInfo(studentData)
     setShowStudentInfo(true)
   }
 
-  const filteredPublicStudents = publicStudents.filter((s) =>
-    `${s.name} ${s.branch} ${s.semester}`.toLowerCase().includes(globalSearch.toLowerCase())
-  )
+  const filteredPublicStudents = publicStudents.filter((s) => {
+    const searchLower = globalSearch.toLowerCase()
+    const matchesSearch =
+      s.name.toLowerCase().includes(searchLower) ||
+      (s.enrollment && s.enrollment.toLowerCase().includes(searchLower)) ||
+      (s.interests && s.interests.some(i => i.toLowerCase().includes(searchLower))) ||
+      s.branch.toLowerCase().includes(searchLower) || // Keeping existing specific logic just in case
+      s.semester.includes(searchLower)
 
-  const filteredClassmates = classmates.filter((c) =>
-    c.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    const matchesBranch = globalBranchFilter === "all" || s.branch === formatBranchName(globalBranchFilter)
+    const matchesSemester = globalSemesterFilter === "all" || s.semester === globalSemesterFilter
+
+    return matchesSearch && matchesBranch && matchesSemester
+  })
+
+  const filteredClassmates = classmates.filter((c) => {
+    // 1. Strict Classmate Definition for Students: Same Branch AND Same Semester
+    if (currentUserRole === 'student') {
+      if (currentUserBranch && c.branch !== currentUserBranch) return false
+      if (currentUserSemester && c.semester !== currentUserSemester) return false
+    }
+
+    // 2. Search Filter (Text)
+    const searchLower = searchQuery.toLowerCase()
+    const matchesSearch =
+      c.name.toLowerCase().includes(searchLower) ||
+      (c.enrollment && c.enrollment.toLowerCase().includes(searchLower)) ||
+      (c.interests && c.interests.some(i => i.toLowerCase().includes(searchLower)));
+
+    // 3. Dropdown Filters (Teacher only)
+    if (currentUserRole === 'teacher') {
+      const matchesBranch = branchFilter === "all" || c.branch === formatBranchName(branchFilter)
+      // Note: Branch names stored in DB might be formatted differently than select values, 
+      // but formatBranchName usage here suggests standardization.
+
+      const matchesSemester = semesterFilter === "all" || c.semester === semesterFilter
+      return matchesSearch && matchesBranch && matchesSemester
+    }
+
+    // Default for Student (Strict Branch/Sem matched above, just need search now)
+    return matchesSearch
+  })
 
   const filteredTeachers = teachers.filter((t) =>
     t.name?.toLowerCase().includes(teacherSearch.toLowerCase())
@@ -387,98 +436,135 @@ const SocialPage = () => {
               </div>
             </div>
 
-            {/* Overview stats */}
+            {/* Overview stats - Conditional for Teachers */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Card className="border shadow-none">
-                <CardContent className="px-3 py-1 flex items-center justify-between">
-                  <div className="text-base text-muted-foreground">Connections</div>
-                  <div className="text-2xl font-bold">{connections.length}</div>
-                </CardContent>
-              </Card>
+              {currentUserRole !== 'teacher' && (
+                <>
+                  <Card className="border shadow-none">
+                    <CardContent className="px-3 py-1 flex items-center justify-between">
+                      <div className="text-base text-muted-foreground">Connections</div>
+                      <div className="text-2xl font-bold">{connections.length}</div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
               <Card className="border shadow-none">
                 <CardContent className="px-3 py-1 flex items-center justify-between">
                   <div className="text-base text-muted-foreground">Teachers</div>
                   <div className="text-2xl font-bold">{teachers.length}</div>
                 </CardContent>
               </Card>
-              <Card className="border shadow-none">
-                <CardContent className="px-3 py-1 flex items-center justify-between">
-                  <div className="text-base text-muted-foreground">Pending Requests</div>
-                  <div className="text-2xl font-bold">{friendRequests.length}</div>
-                </CardContent>
-              </Card>
+              {currentUserRole !== 'teacher' && (
+                <Card className="border shadow-none">
+                  <CardContent className="px-3 py-1 flex items-center justify-between">
+                    <div className="text-base text-muted-foreground">Pending Requests</div>
+                    <div className="text-2xl font-bold">{friendRequests.length}</div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Global Search */}
             <Card>
               <CardHeader className="py-3">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                   <div>
                     <CardTitle className="text-xl">Search People</CardTitle>
                     <CardDescription className="text-sm">Find students across the institute</CardDescription>
                   </div>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      placeholder="Search by name, branch..."
-                      value={globalSearch}
-                      onChange={(e) => setGlobalSearch(e.target.value)}
-                      className="pl-10 h-9"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                    <Select value={globalBranchFilter} onValueChange={setGlobalBranchFilter}>
+                      <SelectTrigger className="w-[180px] h-9">
+                        <SelectValue placeholder="Branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Branches</SelectItem>
+                        <SelectItem value="computer-technology">Computer Technology</SelectItem>
+                        <SelectItem value="civil-engineering">Civil Engineering</SelectItem>
+                        <SelectItem value="mechanical-engineering">Mechanical Engineering</SelectItem>
+                        <SelectItem value="electrical-engineering">Electrical Engineering</SelectItem>
+                        <SelectItem value="electronics-and-telecommunication">Electronics & Telecomm</SelectItem>
+                        <SelectItem value="information-technology">Information Technology</SelectItem>
+                        <SelectItem value="artificial-intelligence-and-machine-learning">AI & ML</SelectItem>
+                        <SelectItem value="dress-designing-and-garment-manufacturing">Dress Designing</SelectItem>
+                        <SelectItem value="interior-design-and-decoration">Interior Design</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={globalSemesterFilter} onValueChange={setGlobalSemesterFilter}>
+                      <SelectTrigger className="w-[140px] h-9">
+                        <SelectValue placeholder="Semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Semesters</SelectItem>
+                        <SelectItem value="1">1st Semester</SelectItem>
+                        <SelectItem value="2">2nd Semester</SelectItem>
+                        <SelectItem value="3">3rd Semester</SelectItem>
+                        <SelectItem value="4">4th Semester</SelectItem>
+                        <SelectItem value="5">5th Semester</SelectItem>
+                        <SelectItem value="6">6th Semester</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Search by name, branch..."
+                        value={globalSearch}
+                        onChange={(e) => setGlobalSearch(e.target.value)}
+                        className="pl-10 h-9"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {globalSearch.trim() === "" ? (
-                  <div className="text-sm text-muted-foreground">Start typing to search students in the institute</div>
-                ) : (
-                  <div className="space-y-2 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {filteredPublicStudents.slice(0, 21).map((s) => (
-                        <Card key={s.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleStudentInfoClick(s)}>
-                          <CardContent className="px-3 py-2">
-                            <div className="flex items-center gap-2.5">
-                              <Avatar className="w-8 h-8 flex-shrink-0">
-                                <AvatarImage src={s.avatar} alt={s.name} />
-                                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                  {getInitials(s.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="min-w-0">
-                                <div className="font-medium text-base truncate" title={s.name}>{s.name}</div>
-                                <div className="text-sm text-muted-foreground truncate" title={`${s.branch} • ${s.semester}`}>
-                                  {s.branch} • {s.semester}
-                                </div>
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {filteredPublicStudents.slice(0, 21).map((s) => (
+                      <Card key={s.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleStudentInfoClick(s)}>
+                        <CardContent className="px-3 py-2">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar className="w-8 h-8 flex-shrink-0">
+                              <AvatarImage src={s.avatar} alt={s.name} />
+                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                {getInitials(s.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <div className="font-medium text-base truncate" title={s.name}>{s.name}</div>
+                              <div className="text-sm text-muted-foreground truncate" title={`${s.branch} • ${s.semester}`}>
+                                {s.branch} • {s.semester}
                               </div>
-                              <div className="ml-auto inline-flex items-center gap-2">
-                                {isConnected(s.id) ? (
+                            </div>
+                            <div className="ml-auto inline-flex items-center gap-2">
+                              {isConnected(s.id) ? (
+                                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
+                                  <MessageCircle className="w-3 h-3" />
+                                </Button>
+                              ) : isRequestSent(s.id) ? (
+                                <Badge variant="secondary" className="text-xs">Requested</Badge>
+                              ) : isRequestReceived(s.id) ? (
+                                <Badge variant="secondary" className="text-xs">Pending Accept</Badge>
+                              ) : (
+                                currentUserRole === 'teacher' ? (
                                   <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
                                     <MessageCircle className="w-3 h-3" />
                                   </Button>
-                                ) : isRequestSent(s.id) ? (
-                                  <Badge variant="secondary" className="text-xs">Requested</Badge>
-                                ) : isRequestReceived(s.id) ? (
-                                  <Badge variant="secondary" className="text-xs">Pending Accept</Badge>
                                 ) : (
-                                  currentUserRole === 'teacher' ? (
-                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
-                                      <MessageCircle className="w-3 h-3" />
-                                    </Button>
-                                  ) : (
-                                    <Button size="sm" onClick={(e) => { e.stopPropagation(); sendConnectRequest(s); }}>Connect</Button>
-                                  )
-                                )}
-                              </div>
+                                  <Button size="sm" onClick={(e) => { e.stopPropagation(); sendConnectRequest(s); }}>Connect</Button>
+                                )
+                              )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {filteredPublicStudents.length === 0 && (
-                        <div className="text-sm text-muted-foreground">No students found</div>
-                      )}
-                    </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {filteredPublicStudents.length === 0 && (
+                      <div className="text-sm text-muted-foreground">No students found</div>
+                    )}
                   </div>
-                )}
+                </div>
+
               </CardContent>
             </Card>
 
@@ -486,19 +572,58 @@ const SocialPage = () => {
             <div className="grid gap-4">
               <Card>
                 <CardHeader className="py-3">
-                  <div className="flex items-center justify-between gap-2">
+
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <div>
-                      <CardTitle className="text-xl">Your Classmates</CardTitle>
-                      <CardDescription className="text-sm">Students in your branch</CardDescription>
+                      <CardTitle className="text-xl">{currentUserRole === 'teacher' ? 'All Students' : 'Your Classmates'}</CardTitle>
+                      <CardDescription className="text-sm">{currentUserRole === 'teacher' ? 'Search and manage students' : 'Students in your branch'}</CardDescription>
                     </div>
-                    <div className="relative w-56">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder="Search classmates..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-9"
-                      />
+                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                      {currentUserRole === 'teacher' && (
+                        <>
+                          <Select value={branchFilter} onValueChange={setBranchFilter}>
+                            <SelectTrigger className="w-[180px] h-9">
+                              <SelectValue placeholder="Branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Branches</SelectItem>
+                              <SelectItem value="computer-technology">Computer Technology</SelectItem>
+                              <SelectItem value="civil-engineering">Civil Engineering</SelectItem>
+                              <SelectItem value="mechanical-engineering">Mechanical Engineering</SelectItem>
+                              <SelectItem value="electrical-engineering">Electrical Engineering</SelectItem>
+                              <SelectItem value="electronics-and-telecommunication">Electronics & Telecomm</SelectItem>
+                              <SelectItem value="information-technology">Information Technology</SelectItem>
+                              <SelectItem value="artificial-intelligence-and-machine-learning">AI & ML</SelectItem>
+                              <SelectItem value="dress-designing-and-garment-manufacturing">Dress Designing</SelectItem>
+                              <SelectItem value="interior-design-and-decoration">Interior Design</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                            <SelectTrigger className="w-[140px] h-9">
+                              <SelectValue placeholder="Semester" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Semesters</SelectItem>
+                              <SelectItem value="1">1st Semester</SelectItem>
+                              <SelectItem value="2">2nd Semester</SelectItem>
+                              <SelectItem value="3">3rd Semester</SelectItem>
+                              <SelectItem value="4">4th Semester</SelectItem>
+                              <SelectItem value="5">5th Semester</SelectItem>
+                              <SelectItem value="6">6th Semester</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </>
+                      )}
+                      <div className="relative w-full sm:w-56">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <Input
+                          placeholder={currentUserRole === 'teacher' ? "Search student name..." : "Search classmates..."}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 h-9"
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -608,117 +733,119 @@ const SocialPage = () => {
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="py-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center text-xl">
-                        <UserPlus className="w-5 h-5 mr-2" />
-                        Friend Requests
-                      </CardTitle>
-                      {friendRequests.length > 0 && <Badge variant="secondary" className="text-sm whitespace-nowrap">{friendRequests.length} pending</Badge>}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {friendRequests.length === 0 ? (
-                      <div className="text-center py-6">
-                        <UserCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                        <h3 className="text-lg font-medium mb-1">No pending requests</h3>
-                        <p className="text-muted-foreground">You're all caught up! No new friend requests at the moment.</p>
+              {currentUserRole !== 'teacher' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="py-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center text-xl">
+                          <UserPlus className="w-5 h-5 mr-2" />
+                          Friend Requests
+                        </CardTitle>
+                        {friendRequests.length > 0 && <Badge variant="secondary" className="text-sm whitespace-nowrap">{friendRequests.length} pending</Badge>}
                       </div>
-                    ) : (
-                      <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
-                        style={{
-                          scrollbarWidth: "thin",
-                          scrollbarColor: "rgb(203 213 225) transparent",
-                        }}>
-                        <div className="space-y-3">
-                          {friendRequests.map((r) => (
-                            <Card key={r.id} className="hover:shadow-sm transition-shadow">
-                              <CardContent className="px-3 py-2">
-                                <div className="flex items-center gap-2.5">
-                                  <Avatar className="w-8 h-8 flex-shrink-0">
-                                    <AvatarImage src={r.requester?.avatar} alt={r.requester?.name} />
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                      {getInitials(r.requester?.name || '??')}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-medium text-base truncate" title={r.requester?.name}>{r.requester?.name}</div>
-                                    <div className="text-sm text-muted-foreground truncate" title={`${r.requester?.branch} • ${r.requester?.semester}`}>
-                                      {r.requester?.branch} • {r.requester?.semester}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground mt-1 truncate" title={r.created_at}>
-                                      {formatShortAgo(r.created_at)}
-                                    </div>
-                                  </div>
-                                  <div className="ml-auto inline-flex items-center gap-2">
-                                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => acceptFriendRequest(r.id)}>
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      Accept
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => denyFriendRequest(r.id)}>
-                                      <XCircle className="w-3 h-3 mr-1" />
-                                      Deny
-                                    </Button>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                    </CardHeader>
+                    <CardContent>
+                      {friendRequests.length === 0 ? (
+                        <div className="text-center py-6">
+                          <UserCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                          <h3 className="text-lg font-medium mb-1">No pending requests</h3>
+                          <p className="text-muted-foreground">You're all caught up! No new friend requests at the moment.</p>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      ) : (
+                        <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
+                          style={{
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "rgb(203 213 225) transparent",
+                          }}>
+                          <div className="space-y-3">
+                            {friendRequests.map((r) => (
+                              <Card key={r.id} className="hover:shadow-sm transition-shadow">
+                                <CardContent className="px-3 py-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                      <AvatarImage src={r.requester?.avatar} alt={r.requester?.name} />
+                                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                        {getInitials(r.requester?.name || '??')}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-base truncate" title={r.requester?.name}>{r.requester?.name}</div>
+                                      <div className="text-sm text-muted-foreground truncate" title={`${r.requester?.branch} • ${r.requester?.semester}`}>
+                                        {r.requester?.branch} • {r.requester?.semester}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground mt-1 truncate" title={r.created_at}>
+                                        {formatShortAgo(r.created_at)}
+                                      </div>
+                                    </div>
+                                    <div className="ml-auto inline-flex items-center gap-2">
+                                      <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => acceptFriendRequest(r.id)}>
+                                        <CheckCircle className="w-3 h-3 mr-1" />
+                                        Accept
+                                      </Button>
+                                      <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => denyFriendRequest(r.id)}>
+                                        <XCircle className="w-3 h-3 mr-1" />
+                                        Deny
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader className="py-3">
-                    <CardTitle className="text-xl">Sent Requests</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {sentRequests.length === 0 ? (
-                      <div className="text-center py-6">
-                        <h3 className="text-lg font-medium mb-1">No pending sent requests</h3>
-                        <p className="text-muted-foreground">Any requests you send will appear here until accepted.</p>
-                      </div>
-                    ) : (
-                      <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
-                        style={{
-                          scrollbarWidth: "thin",
-                          scrollbarColor: "rgb(203 213 225) transparent",
-                        }}>
-                        <div className="space-y-3">
-                          {sentRequests.map((r) => (
-                            <Card key={r.id} className="hover:shadow-sm transition-shadow">
-                              <CardContent className="px-3 py-2">
-                                <div className="flex items-center gap-2.5">
-                                  <Avatar className="w-8 h-8 flex-shrink-0">
-                                    <AvatarImage src={r.recipient?.avatar} alt={r.recipient?.name} />
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                      {getInitials(r.recipient?.name || '??')}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-medium text-base truncate" title={r.recipient?.name}>{r.recipient?.name}</div>
-                                    <div className="text-sm text-muted-foreground truncate" title={`${r.recipient?.branch} • ${r.recipient?.semester}`}>
-                                      {r.recipient?.branch} • {r.recipient?.semester}
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-xl">Sent Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {sentRequests.length === 0 ? (
+                        <div className="text-center py-6">
+                          <h3 className="text-lg font-medium mb-1">No pending sent requests</h3>
+                          <p className="text-muted-foreground">Any requests you send will appear here until accepted.</p>
+                        </div>
+                      ) : (
+                        <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
+                          style={{
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "rgb(203 213 225) transparent",
+                          }}>
+                          <div className="space-y-3">
+                            {sentRequests.map((r) => (
+                              <Card key={r.id} className="hover:shadow-sm transition-shadow">
+                                <CardContent className="px-3 py-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                      <AvatarImage src={r.recipient?.avatar} alt={r.recipient?.name} />
+                                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                                        {getInitials(r.recipient?.name || '??')}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-base truncate" title={r.recipient?.name}>{r.recipient?.name}</div>
+                                      <div className="text-sm text-muted-foreground truncate" title={`${r.recipient?.branch} • ${r.recipient?.semester}`}>
+                                        {r.recipient?.branch} • {r.recipient?.semester}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="secondary" className="text-xs">Pending</Badge>
+                                      <Badge variant="outline" className="text-xs text-muted-foreground">Sent {formatShortAgo(r.created_at)}</Badge>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="secondary" className="text-xs">Pending</Badge>
-                                    <Badge variant="outline" className="text-xs text-muted-foreground">Sent {formatShortAgo(r.created_at)}</Badge>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
             </div>
             {/* end grid */}
           </div>

@@ -69,6 +69,7 @@ export default function Dashboard() {
 
   const [notesStudiedCount, setNotesStudiedCount] = useState(0)
   const [userBranch, setUserBranch] = useState("")
+  const [studyStreak, setStudyStreak] = useState(0)
 
   useEffect(() => {
     const getData = async () => {
@@ -79,7 +80,7 @@ export default function Dashboard() {
         // Fetch User Profile for Branch
         const { data: profile } = await supabase
           .from('profiles')
-          .select('branch, is_onboarded')
+          .select('branch, is_onboarded, study_streak')
           .eq('id', user.id)
           .single()
 
@@ -88,6 +89,21 @@ export default function Dashboard() {
             setShowOnboarding(true)
           }
           setUserBranch(profile.branch || "")
+          setStudyStreak(profile.study_streak || 0)
+        }
+
+        // Trigger Streak Update
+        await supabase.rpc('update_study_streak')
+
+        // Re-fetch profile to get updated streak if needed (optional, but ensures UI is sync)
+        const { data: updatedProfile } = await supabase
+          .from('profiles')
+          .select('study_streak')
+          .eq('id', user.id)
+          .single()
+
+        if (updatedProfile) {
+          setStudyStreak(updatedProfile.study_streak || 0)
         }
 
         // Fetch Notes Studied Count
@@ -305,7 +321,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center space-x-2">
                 <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                  <Zap className="w-3 h-3 mr-1" />5 Day Streak
+                  <Zap className="w-3 h-3 mr-1" />{studyStreak} Day Streak
                 </Badge>
               </div>
             </div>
@@ -318,9 +334,9 @@ export default function Dashboard() {
                   <Brain className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">12</div>
+                  <div className="text-2xl font-bold">0</div>
                   <p className="text-xs text-muted-foreground">
-                    <span className="text-secondary">+2</span> from last week
+                    <span className="text-muted-foreground">0</span> from last week
                   </p>
                 </CardContent>
               </Card>
@@ -331,8 +347,8 @@ export default function Dashboard() {
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">5 Days</div>
-                  <p className="text-xs text-muted-foreground">Personal best: 12 days</p>
+                  <div className="text-2xl font-bold">{studyStreak} Days</div>
+                  <p className="text-xs text-muted-foreground">Keep it up!</p>
                 </CardContent>
               </Card>
 
@@ -342,9 +358,9 @@ export default function Dashboard() {
                   <Trophy className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">#3</div>
+                  <div className="text-2xl font-bold">#0</div>
                   <p className="text-xs text-muted-foreground">
-                    <span className="text-secondary">↑2</span> from last week
+                    <span className="text-muted-foreground">-</span> from last week
                   </p>
                 </CardContent>
               </Card>
@@ -518,34 +534,8 @@ export default function Dashboard() {
                     <CardDescription className="text-xs">Your latest study sessions and achievements</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-4 p-3 rounded-lg bg-card border">
-                      <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
-                        <Brain className="w-5 h-5 text-secondary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">Completed AI Quiz: Data Structures</p>
-                        <p className="text-xs text-muted-foreground">Score: 85% • 2 hours ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-4 p-3 rounded-lg bg-card border">
-                      <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-accent" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">Studied Notes: Machine Learning Basics</p>
-                        <p className="text-xs text-muted-foreground">3 topics reviewed • 5 hours ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-4 p-3 rounded-lg bg-card border">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <MessageCircle className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">Joined Group Discussion: Algorithms</p>
-                        <p className="text-xs text-muted-foreground">5 new messages • 1 day ago</p>
-                      </div>
+                    <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
+                      No recent activity
                     </div>
                   </CardContent>
                 </Card>
