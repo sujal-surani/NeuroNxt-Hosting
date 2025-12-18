@@ -25,3 +25,22 @@ export async function getInstituteStatus(code: string) {
         return { status: 'active', error: "Unexpected error" }
     }
 }
+
+export async function validateInstituteCode(code: string) {
+    const supabase = createClient()
+    try {
+        const { data, error } = await supabase
+            .from('institutes')
+            .select('code')
+            .eq('code', code)
+            .single()
+
+        if (error || !data) {
+            return { valid: false }
+        }
+
+        return { valid: true }
+    } catch (error) {
+        return { valid: false }
+    }
+}

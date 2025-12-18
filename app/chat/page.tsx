@@ -70,6 +70,8 @@ interface ChatMessage {
   reactions?: { emoji: string; count: number; users: string[] }[]
   replyTo?: number
   senderId?: string
+  senderName?: string
+  senderAvatar?: string
 }
 
 interface ChatContact {
@@ -148,6 +150,11 @@ export default function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const [viewImage, setViewImage] = useState<string | null>(null)
+  const selectedContactRef = useRef<ChatContact | null>(null)
+
+  useEffect(() => {
+    selectedContactRef.current = selectedContact
+  }, [selectedContact])
 
   // Presence State
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
@@ -281,29 +288,27 @@ export default function ChatPage() {
 
     // Subscribe to new messages in active conversation
     const messageChannel = supabase
-      .channel('chat-messages')
+      .channel('public:messages')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          if (selectedContact && payload.new.conversation_id === selectedContact.conversationId) {
-            // Add new message to current view
-            const newMsg = payload.new
-            const isMe = newMsg.sender_id === currentUser.id
-            setMessages(prev => [...prev, {
-              id: newMsg.id,
-              content: newMsg.content,
-              sender: isMe ? "user" : "other",
-              timestamp: new Date(newMsg.created_at),
-              type: newMsg.type as any,
-              fileName: newMsg.file_name,
-              fileSize: newMsg.file_size,
-              fileUrl: newMsg.file_url,
-              senderId: newMsg.sender_id
-            }])
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages'
+        },
+        async (payload) => {
+          const newMessage = payload.new as any
+          console.log('New message received:', newMessage)
+
+          // 1. Update contacts/conversations list (move to top, update last msg, update unread)
+          await fetchConversations(currentUser.id)
+
+          // 2. If it's the currently open chat, append to messages and MARK AS READ
+          if (selectedContactRef.current?.conversationId === newMessage.conversation_id) {
+            fetchMessages(newMessage.conversation_id)
+            // CRITICAL: Mark as read immediately if chat is open
+            await markAsRead(newMessage.conversation_id)
           }
-          // Refresh conversations list to update last message
-          fetchConversations(currentUser.id)
         }
       )
       .subscribe()
@@ -425,7 +430,13 @@ export default function ChatPage() {
   const fetchMessages = async (conversationId: number) => {
     const { data, error } = await supabase
       .from('messages')
-      .select('*')
+      .select(`
+        *,
+        sender:profiles!sender_id (
+          full_name,
+          avatar_url
+        )
+      `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
 
@@ -437,13 +448,15 @@ export default function ChatPage() {
     const formattedMessages: ChatMessage[] = data.map((msg: any) => ({
       id: msg.id,
       content: msg.content,
-      sender: msg.sender_id === currentUser.id ? "user" : "other",
+      sender: msg.sender_id === currentUser?.id ? "user" : "other",
       timestamp: new Date(msg.created_at),
       type: msg.type,
       fileName: msg.file_name,
       fileSize: msg.file_size,
       fileUrl: msg.file_url,
-      senderId: msg.sender_id
+      senderId: msg.sender_id,
+      senderName: msg.sender?.full_name || "Unknown",
+      senderAvatar: msg.sender?.avatar_url
     }))
 
     setMessages(formattedMessages)
@@ -452,17 +465,15 @@ export default function ChatPage() {
   const markAsRead = async (conversationId: number) => {
     if (!currentUser) return
 
-    const { error } = await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .eq('conversation_id', conversationId)
-      .neq('sender_id', currentUser.id)
-      .eq('is_read', false)
+    // Use RPC to mark as read (handles both Groups and 1-on-1)
+    const { error } = await supabase.rpc('mark_conversation_as_read', {
+      p_conversation_id: conversationId
+    })
 
     if (error) {
-      console.error('Error marking messages as read:', error)
+      console.error('Error marking as read:', error)
     } else {
-      // Update local state to clear badge only on success
+      // Update local state to clear badge
       setContacts(prev => prev.map(c =>
         c.conversationId === conversationId ? { ...c, unreadCount: 0 } : c
       ))
@@ -851,51 +862,75 @@ export default function ChatPage() {
     }
   }
 
-  const handleStudentInfoClick = async () => {
-    // Prevent opening profile for teachers
-    if (selectedContact?.role === 'teacher') return
+  const handleStudentInfoClick = async (targetUserId?: string) => {
+    // Determine the ID to fetch
+    // If targetUserId is passed, use it (Group member click)
+    // If not, check if it's a 1-on-1 chat and use selectedContact.studentId
+    const userIdToFetch = targetUserId || (selectedContact && !selectedContact.isGroup ? selectedContact.studentId : null)
 
-    if (selectedContact && !selectedContact.isGroup) {
-      // Fetch full profile details
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', selectedContact.studentId)
-        .single()
+    console.log('[Debug] handleStudentInfoClick', { targetUserId, selectedContact, userIdToFetch })
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-        toast.error("Failed to load profile")
-        return
-      }
-
-      // Fetch connection count
-      const { count: connectionCount, error: countError } = await supabase
-        .from('connections')
-        .select('*', { count: 'exact', head: true })
-        .or(`requester_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
-        .eq('status', 'accepted')
-
-      const student: Student = {
-        id: profile.id,
-        name: profile.full_name,
-        avatar: profile.avatar_url || getInitials(profile.full_name),
-        branch: profile.branch,
-        semester: profile.semester,
-        status: profile.status || "offline",
-        isConnected: true,
-        bio: profile.bio,
-        role: profile.role,
-        instituteCode: profile.institute_code,
-        lastActive: profile.last_active,
-        email: profile.email,
-        location: profile.location,
-        connections: connectionCount || 0,
-        visibility: profile.visibility
-      }
-      setSelectedStudentInfo(student)
-      setShowStudentInfo(true)
+    if (!userIdToFetch) {
+      console.warn('[Debug] No userIdToFetch found')
+      return
     }
+
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userIdToFetch)
+      .single()
+
+    if (error) {
+      console.error('Error fetching profile:', error)
+      toast.error("Failed to load profile")
+      return
+    }
+
+    // Role Check: We generally want to show profiles for students.
+    // Use a permissive check: if role is explicitly 'teacher', block it.
+    // Otherwise allow 'student', 'admin' (if desired), or undefined/null.
+    if (profile.role === 'teacher') {
+      console.log('[Debug] User is teacher, suppressing profile')
+      return
+    }
+
+    // Fetch connection count
+    const { count: connectionCount, error: countError } = await supabase
+      .from('connections')
+      .select('*', { count: 'exact', head: true })
+      .or(`requester_id.eq.${profile.id},recipient_id.eq.${profile.id}`)
+      .eq('status', 'accepted')
+
+    // Construct enriched student object logic
+    // We map snake_case DB fields to camelCase Student interface fields if they exist
+    // Safely handle missing columns by using optional chaining or 'as any' casting if TS complains about unknown properties
+    const p = profile as any
+
+    const student: Student = {
+      id: profile.id,
+      name: profile.full_name,
+      avatar: profile.avatar_url || getInitials(profile.full_name),
+      branch: profile.branch,
+      semester: profile.semester,
+      status: profile.status || "offline",
+      isConnected: true, // We assume if chatting, there's some connection, but this specific boolean might need real check if strict
+      bio: profile.bio,
+      role: profile.role,
+      instituteCode: p.institute_code, // DB field likely institute_code
+      lastActive: p.last_active, // DB field likely last_active
+      email: profile.email,
+      location: p.location, // DB field likely location
+      enrollment: p.enrollment_number, // DB field likely enrollment_number
+      visibility: p.visibility,
+      connections: connectionCount || 0,
+      quizzesCompleted: p.quizzes_completed, // Guessing DB field names
+      studyStreak: p.study_streak
+    }
+
+    console.log('[Debug] Setting selectedStudentInfo', student)
+    setSelectedStudentInfo(student)
+    setShowStudentInfo(true)
   }
 
   const closeStudentInfo = () => {
@@ -971,9 +1006,6 @@ export default function ChatPage() {
         return updated.sort((a, b) => {
           if (a.isPinned && !b.isPinned) return -1
           if (!a.isPinned && b.isPinned) return 1
-          // We can't easily access updated_at here for secondary sort without storing it more explicitly,
-          // but usually the list order is preserved enough or we can rely on index if needed.
-          // For now, let's just sort by pin.
           return 0
         })
       })
@@ -1054,7 +1086,6 @@ export default function ChatPage() {
     if (showDropdown) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showDropdown])
-
 
   if (loading) {
     return (
@@ -1331,83 +1362,99 @@ export default function ChatPage() {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-2 sm:p-4 min-h-0">
                   <div className="space-y-3 sm:space-y-4 max-w-full">
+
+
                     {messages.map((message) => (
                       <div
                         key={message.id}
-                        className={`flex mb-4 gap-2 ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                        className={`flex mb-4 gap-2 ${message.sender === "user" ? "justify-end" : "justify-start"} `}
                       >
                         {/* Avatar for Receiver */}
                         {message.sender !== "user" && (
-                          <Avatar className="w-6 h-6 mt-auto">
-                            <AvatarImage src={selectedContact?.avatar} />
-                            <AvatarFallback className="text-[10px]">{getInitials(selectedContact?.name || "?")}</AvatarFallback>
+                          <Avatar
+                            className="w-8 h-8 mt-auto shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => handleStudentInfoClick(message.senderId)}
+                          >
+                            {/* Use specific sender avatar for groups, fallback to contact avatar for 1-on-1 */}
+                            <AvatarImage src={message.senderAvatar || selectedContact?.avatar} />
+                            <AvatarFallback className="text-[10px]">{getInitials(message.senderName || selectedContact?.name || "?")}</AvatarFallback>
                           </Avatar>
                         )}
 
-                        <div
-                          className={`relative max-w-[70%] sm:max-w-[75%] shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
-                            ? "bg-slate-700 text-white rounded-2xl rounded-tr-sm"
-                            : "bg-gray-200 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-sm"
-                            }`}
-                        >
-                          {/* Text Content */}
-                          {message.type === "text" && (
-                            <div className="text-sm whitespace-pre-wrap leading-relaxed px-4 py-2">
-                              {message.content}
-                              {/* Inline Timestamp spacer */}
-                              <span className="inline-block w-11 h-0"></span>
-                            </div>
+                        <div className={`flex flex-col max-w-[70%] sm:max-w-[75%] ${message.sender === "user" ? "items-end" : "items-start"} `}>
+
+                          {/* Sender Name for Groups */}
+                          {message.sender !== "user" && selectedContact?.isGroup && (
+                            <span className="text-[10px] text-muted-foreground ml-1 mb-1 font-medium">
+                              {message.senderName?.split(" ")[0]}
+                            </span>
                           )}
 
-                          {/* Image Content - Full Bleed with small padding */}
-                          {message.type === "image" && (
-                            <div className="p-1">
-                              <img
-                                src={message.fileUrl || message.content}
-                                alt="Sent image"
-                                className="rounded-xl w-full h-auto max-h-80 object-cover cursor-pointer hover:opacity-95 transition-opacity"
-                                onClick={() => setViewImage(message.fileUrl || message.content)}
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                              {message.content !== "Sent an image" && <p className="text-sm mt-2 px-2 pb-1">{message.content}</p>}
-                            </div>
-                          )}
+                          <div
+                            className={`relative shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
+                              ? "bg-slate-700 text-white rounded-2xl rounded-tr-sm"
+                              : "bg-gray-200 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-sm"
+                              } `}
+                          >
+                            {/* Text Content */}
+                            {message.type === "text" && (
+                              <div className="text-sm whitespace-pre-wrap leading-relaxed px-4 py-2">
+                                {message.content}
+                                {/* Inline Timestamp spacer */}
+                                <span className="inline-block w-11 h-0"></span>
+                              </div>
+                            )}
 
-                          {/* File Content */}
-                          {message.type === "file" && (
-                            <div className="p-2">
-                              <div
-                                className={`flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer ${message.sender === "user"
-                                  ? "bg-white/10 border-white/10 hover:bg-white/20"
-                                  : "bg-background border-border/50 shadow-sm hover:bg-background/80"
-                                  }`}
-                                onClick={() => window.open(message.fileUrl, '_blank')}
-                              >
-                                <div className={`p-2.5 rounded-full shrink-0 ${message.sender === "user" ? "bg-white/20" : "bg-white dark:bg-zinc-900"
-                                  }`}>
-                                  <FileText className={`w-4 h-4 ${message.sender === "user" ? "text-white" : "text-gray-700 dark:text-gray-400"
-                                    }`} />
-                                </div>
-                                <div className="flex-1 min-w-0 grid gap-0.5">
-                                  <p className="text-sm font-medium truncate">
-                                    {message.fileName || "Unknown File"}
-                                  </p>
-                                  <p className={`text-[10px] ${message.sender === "user" ? "text-slate-300" : "text-gray-500"
-                                    }`}>
-                                    {message.fileSize || "Unknown size"}
-                                  </p>
+                            {/* Image Content - Full Bleed with small padding */}
+                            {message.type === "image" && (
+                              <div className="p-1">
+                                <img
+                                  src={message.fileUrl || message.content}
+                                  alt="Sent image"
+                                  className="rounded-xl w-full h-auto max-h-80 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+                                  onClick={() => setViewImage(message.fileUrl || message.content)}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                                {message.content !== "Sent an image" && <p className="text-sm mt-2 px-2 pb-1">{message.content}</p>}
+                              </div>
+                            )}
+
+                            {/* File Content */}
+                            {message.type === "file" && (
+                              <div className="p-2">
+                                <div
+                                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors cursor-pointer ${message.sender === "user"
+                                    ? "bg-white/10 border-white/10 hover:bg-white/20"
+                                    : "bg-background border-border/50 shadow-sm hover:bg-background/80"
+                                    } `}
+                                  onClick={() => window.open(message.fileUrl, '_blank')}
+                                >
+                                  <div className={`p-2.5 rounded-full shrink-0 ${message.sender === "user" ? "bg-white/20" : "bg-white dark:bg-zinc-900"
+                                    } `}>
+                                    <FileText className={`w-4 h-4 ${message.sender === "user" ? "text-white" : "text-gray-700 dark:text-gray-400"
+                                      } `} />
+                                  </div>
+                                  <div className="flex-1 min-w-0 grid gap-0.5">
+                                    <p className="text-sm font-medium truncate">
+                                      {message.fileName || "Unknown File"}
+                                    </p>
+                                    <p className={`text-[10px] ${message.sender === "user" ? "text-slate-300" : "text-gray-500"
+                                      } `}>
+                                      {message.fileSize || "Unknown size"}
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Timestamp */}
-                          <div className={`text-[10px] select-none text-right px-3 pb-1.5 -mt-1 ${message.type === 'image' ? 'absolute bottom-2 right-2 bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm' : ''
-                            } ${message.sender === "user" && message.type !== 'image' ? "text-slate-300" : "text-gray-500"
-                            }`}>
-                            {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            {/* Timestamp */}
+                            <div className={`text-[10px] select-none text-right px-3 pb-1.5 -mt-1 ${message.type === 'image' ? 'absolute bottom-2 right-2 bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm' : ''
+                              } ${message.sender === "user" && message.type !== 'image' ? "text-slate-300" : "text-gray-500"
+                              } `}>
+                              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
                           </div>
                         </div>
                       </div>

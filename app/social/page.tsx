@@ -24,6 +24,7 @@ interface SocialUser {
   branch: string
   semester: string
   status: "online" | "offline"
+  account_status?: string // Added
   bio: string
   interests: string[]
   followers: number
@@ -77,6 +78,7 @@ const SocialPage = () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       // 1. Fetch all profiles
+      // Note: RLS should filter this, but we add client-side check for double safety
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -92,6 +94,7 @@ const SocialPage = () => {
         branch: formatBranchName(profile.branch),
         semester: profile.semester || "1",
         status: "offline", // TODO: Real status
+        account_status: profile.account_status, // Map from DB
         bio: profile.bio || "No bio available",
         interests: ["Coding", "AI"], // Mock interests
         followers: Math.floor(Math.random() * 200), // Mock
@@ -115,8 +118,18 @@ const SocialPage = () => {
 
       // Filter and set specific groups
       // Only show actual students and teachers, excluding admins AND current user
-      const allStudents = formattedUsers.filter(u => u.role === 'student' && u.id !== user?.id)
-      const allTeachers = formattedUsers.filter(u => u.role === 'teacher' && u.id !== user?.id)
+      // CRITICAL: Filter out pending/inactive users
+      const allStudents = formattedUsers.filter(u =>
+        u.role === 'student' &&
+        u.id !== user?.id &&
+        u.account_status === 'active' // Strict client-side check
+      )
+
+      const allTeachers = formattedUsers.filter(u =>
+        u.role === 'teacher' &&
+        u.id !== user?.id &&
+        u.account_status === 'active' // Strict client-side check
+      )
 
       setClassmates(allStudents)
       setTeachers(allTeachers)
