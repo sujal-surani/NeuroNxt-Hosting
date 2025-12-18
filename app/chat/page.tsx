@@ -3,6 +3,10 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
+<<<<<<< HEAD
+=======
+import EmojiPicker from "emoji-picker-react"
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 import { Sidebar } from "@/components/sidebar"
 import { TopNavbar } from "@/components/top-navbar"
 import { Button } from "@/components/ui/button"
@@ -17,8 +21,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+<<<<<<< HEAD
 import { toast } from "sonner"
 import { StudentProfilePopup } from "@/components/student-profile-popup"
+=======
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
+import { StudentProfilePopup } from "@/components/student-profile-popup"
+import { GroupDetailsPopup } from "./components/GroupDetailsPopup"
+import { AddMemberDialog } from "./components/AddMemberDialog"
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 import {
   Send,
   Search,
@@ -52,7 +73,14 @@ import {
   Settings,
   Loader2,
   FileText,
+<<<<<<< HEAD
   MessageCircle
+=======
+  MessageCircle,
+  LogOut,
+  Check,
+  CheckCheck
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -68,12 +96,21 @@ interface ChatMessage {
   fileSize?: string
   fileUrl?: string
   reactions?: { emoji: string; count: number; users: string[] }[]
+<<<<<<< HEAD
+=======
+  isRead?: boolean
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   replyTo?: number
   senderId?: string
   senderName?: string
   senderAvatar?: string
 }
 
+<<<<<<< HEAD
+=======
+const REACTION_EMOJIS = ["❤️", "👍", "😂", "😮", "😢", "🔥"]
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 interface ChatContact {
   id: number
   conversationId?: number
@@ -91,7 +128,13 @@ interface ChatContact {
   studentId?: string
   branch?: string
   semester?: string
+<<<<<<< HEAD
   role?: string // Added role field
+=======
+  role?: string
+  participants?: any[]
+  description?: string // Added description field
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 }
 
 interface Student {
@@ -144,8 +187,29 @@ export default function ChatPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showClearChatModal, setShowClearChatModal] = useState(false)
   const [showGroupModal, setShowGroupModal] = useState(false)
+<<<<<<< HEAD
   const [isAdmin, setIsAdmin] = useState(true)
   const [showDisconnectedAlert, setShowDisconnectedAlert] = useState(false)
+=======
+  const [showGroupDetails, setShowGroupDetails] = useState(false)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [isLeavingGroup, setIsLeavingGroup] = useState(false)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+
+  // Connections state for adding members
+  const [availableCandidates, setAvailableCandidates] = useState<any[]>([])
+  const [loadingCandidates, setLoadingCandidates] = useState(false)
+
+  // Connection status map for group members
+  const [memberConnectionStatus, setMemberConnectionStatus] = useState<Record<string, 'pending' | 'accepted' | 'none'>>({})
+  const [isAdmin, setIsAdmin] = useState(true)
+  const [showDisconnectedAlert, setShowDisconnectedAlert] = useState(false)
+  const [isUpdatingGroup, setIsUpdatingGroup] = useState(false)
+
+  // Dynamic import for GroupDetailsPopup to avoid circular deps or server/client issues if any (optional but good practice)
+  // strict import is fine here since it's a component
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -311,8 +375,96 @@ export default function ChatPage() {
           }
         }
       )
+<<<<<<< HEAD
       .subscribe()
 
+=======
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages'
+        },
+        async (payload) => {
+          const updatedMessage = payload.new as any
+          console.log('Message updated (Realtime):', updatedMessage)
+
+          setMessages(prev => {
+            // Check if this message is in our current view
+            const exists = prev.some(m => m.id === updatedMessage.id)
+            if (!exists) return prev
+
+            return prev.map(msg =>
+              msg.id === updatedMessage.id
+                ? { ...msg, isRead: updatedMessage.is_read }
+                : msg
+            )
+          })
+        }
+      )
+      .subscribe()
+
+      .subscribe()
+
+    // Subscribe to reactions
+    const reactionChannel = supabase
+      .channel('public:message_reactions')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        async (payload) => {
+          console.log('Reaction change:', payload)
+          const { eventType, new: newReaction, old: oldReaction } = payload
+
+          setMessages(prev => prev.map(msg => {
+            const messageId = eventType === 'DELETE' ? oldReaction.message_id : newReaction.message_id
+            if (msg.id !== messageId) return msg
+
+            const currentReactions = msg.reactions || []
+            let updatedReactions = [...currentReactions]
+
+            if (eventType === 'INSERT') {
+              const rIndex = updatedReactions.findIndex(r => r.emoji === newReaction.reaction)
+              if (rIndex >= 0) {
+                if (!updatedReactions[rIndex].users.includes(newReaction.user_id)) {
+                  updatedReactions[rIndex] = {
+                    ...updatedReactions[rIndex],
+                    count: updatedReactions[rIndex].count + 1,
+                    users: [...updatedReactions[rIndex].users, newReaction.user_id]
+                  }
+                }
+              } else {
+                updatedReactions.push({
+                  emoji: newReaction.reaction,
+                  count: 1,
+                  users: [newReaction.user_id]
+                })
+              }
+            } else if (eventType === 'DELETE') {
+              const rIndex = updatedReactions.findIndex(r => r.emoji === oldReaction.reaction)
+              if (rIndex >= 0) {
+                const newUsers = updatedReactions[rIndex].users.filter(u => u !== oldReaction.user_id)
+                if (newUsers.length > 0) {
+                  updatedReactions[rIndex] = {
+                    ...updatedReactions[rIndex],
+                    count: newUsers.length,
+                    users: newUsers
+                  }
+                } else {
+                  updatedReactions.splice(rIndex, 1)
+                }
+              }
+            }
+
+            return { ...msg, reactions: updatedReactions }
+          }))
+        }
+      )
+      .subscribe()
+
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
     // Subscribe to conversation updates (for last message)
     const conversationChannel = supabase
       .channel('chat-conversations')
@@ -327,10 +479,51 @@ export default function ChatPage() {
 
     return () => {
       supabase.removeChannel(messageChannel)
+<<<<<<< HEAD
+=======
+      supabase.removeChannel(reactionChannel)
+>>>>>>> 8c01869 (Chat Page 99% Completed)
       supabase.removeChannel(conversationChannel)
     }
   }, [currentUser, selectedContact])
 
+<<<<<<< HEAD
+=======
+  // Fetch connection status for current group members
+  useEffect(() => {
+    const fetchMemberConnections = async () => {
+      if (!currentUser || !selectedContact?.isGroup || !selectedContact?.participants) return
+
+      // Optimization: Only fetch if group details are shown
+      if (!showGroupDetails) return
+
+      const memberIds = selectedContact.participants.map((p: any) => p.user_id || p.id).filter((id: string) => id !== currentUser.id)
+
+      if (memberIds.length === 0) return
+
+      // Fetch all my accepted/pending connections
+      const { data: allConnections } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+
+      if (allConnections) {
+        const statusMap: Record<string, 'pending' | 'accepted' | 'none'> = {}
+
+        allConnections.forEach((conn: any) => {
+          // Identify the "other" person
+          const otherId = conn.requester_id === currentUser.id ? conn.recipient_id : conn.requester_id
+          statusMap[otherId] = conn.status
+        })
+
+        setMemberConnectionStatus(statusMap)
+      }
+    }
+
+    fetchMemberConnections()
+  }, [showGroupDetails, selectedContact, currentUser])
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   const fetchConversations = async (userId: string) => {
     // Use new RPC to get all conversations (groups + 1-on-1)
     const { data, error } = await supabase.rpc('get_user_conversations', {
@@ -349,7 +542,11 @@ export default function ChatPage() {
       .map((conv: any) => {
         const isGroup = conv.is_group
         const lastMsg = conv.last_message
+<<<<<<< HEAD
         const isPinned = false // Pinned logic needs update for groups if desired, simplistic for now
+=======
+        const isPinned = conv.pinned_by ? conv.pinned_by.includes(userId) : false
+>>>>>>> 8c01869 (Chat Page 99% Completed)
         const isDisconnected = false // Group logic doesn't really have 'disconnected' in same way
 
         let displayName = conv.name
@@ -400,10 +597,19 @@ export default function ChatPage() {
           branch: displayBranch,
           semester: displaySemester,
           isGroup: isGroup,
+<<<<<<< HEAD
           memberCount: isGroup ? (conv.participants ? conv.participants.length : 0) : 2,
           isPinned: isPinned,
           isDisconnected: isDisconnected,
           role: otherUserRole
+=======
+          participants: conv.participants || [],
+          memberCount: isGroup ? (conv.participants ? conv.participants.length : 0) : 2,
+          isPinned: isPinned,
+          isDisconnected: isDisconnected,
+          role: otherUserRole,
+          description: displayDesc // Mapped description
+>>>>>>> 8c01869 (Chat Page 99% Completed)
         }
       })
 
@@ -435,6 +641,13 @@ export default function ChatPage() {
         sender:profiles!sender_id (
           full_name,
           avatar_url
+<<<<<<< HEAD
+=======
+        ),
+        message_reactions (
+          user_id,
+          reaction
+>>>>>>> 8c01869 (Chat Page 99% Completed)
         )
       `)
       .eq('conversation_id', conversationId)
@@ -456,7 +669,20 @@ export default function ChatPage() {
       fileUrl: msg.file_url,
       senderId: msg.sender_id,
       senderName: msg.sender?.full_name || "Unknown",
+<<<<<<< HEAD
       senderAvatar: msg.sender?.avatar_url
+=======
+      senderAvatar: msg.sender?.avatar_url,
+      isRead: msg.is_read,
+      reactions: Object.values(
+        (msg.message_reactions || []).reduce((acc: any, r: any) => {
+          if (!acc[r.reaction]) acc[r.reaction] = { emoji: r.reaction, count: 0, users: [] }
+          acc[r.reaction].count++
+          acc[r.reaction].users.push(r.user_id)
+          return acc
+        }, {})
+      )
+>>>>>>> 8c01869 (Chat Page 99% Completed)
     }))
 
     setMessages(formattedMessages)
@@ -542,6 +768,7 @@ export default function ChatPage() {
       return
     }
 
+<<<<<<< HEAD
     // Check if it's already in our local list
     const existingLocal = contacts.find(c => c.conversationId === convId)
     if (existingLocal) {
@@ -551,6 +778,18 @@ export default function ChatPage() {
       setSelectedContact(updatedContact)
     } else {
       // Add to local list
+=======
+    // Check if it's already in our local list (handle type mismatch just in case)
+    const existingLocal = contacts.find(c => c.conversationId == convId)
+
+    if (existingLocal) {
+      // Update local state to remove disconnected status
+      const updatedContact = { ...existingLocal, isDisconnected: false }
+      setContacts(contacts.map(c => c.conversationId == convId ? updatedContact : c))
+      setSelectedContact(updatedContact)
+    } else {
+      // Add a temporary optimistic contact
+>>>>>>> 8c01869 (Chat Page 99% Completed)
       const newContact: ChatContact = {
         id: convId,
         conversationId: convId,
@@ -564,8 +803,23 @@ export default function ChatPage() {
         isGroup: false,
         isDisconnected: false
       }
+<<<<<<< HEAD
       setContacts([newContact, ...contacts])
       setSelectedContact(newContact)
+=======
+
+      // We set this momentarily
+      setSelectedContact(newContact)
+
+      // But we MUST fetch the real conversation data to see if it actually has history
+      // (e.g. it was just hidden/deleted locally but has messages on server)
+      await fetchConversations(currentUser?.id)
+
+      // After fetching, try to find it again in the updated list to get the real 'lastMessage'
+      // We can't easily access the *updated* state here due to closures, 
+      // but fetchMessages will run due to selectedContact change and fill the chat.
+      // The Sidebar will be updated by fetchConversations.
+>>>>>>> 8c01869 (Chat Page 99% Completed)
     }
     setShowNewChatModal(false)
     toast.success(`Started chat with ${student.name}`)
@@ -576,6 +830,10 @@ export default function ChatPage() {
 
     const content = newMessage
     setNewMessage("") // Clear input immediately
+<<<<<<< HEAD
+=======
+    setShowEmojiPicker(false) // Close emoji picker
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 
     const { data: messageData, error: messageError } = await supabase
       .from('messages')
@@ -651,6 +909,50 @@ export default function ChatPage() {
     }
   }
 
+<<<<<<< HEAD
+=======
+  const handleLeaveGroup = () => {
+    if (!selectedContact || !currentUser) return
+    setShowLeaveDialog(true)
+  }
+
+  const confirmLeaveGroup = async () => {
+    if (!selectedContact || !currentUser) return
+
+    setIsLeavingGroup(true)
+    const toastId = toast.loading("Leaving group...")
+
+    try {
+      // 1. Remove user from conversation_participants
+      const { error: leaveError, count } = await supabase
+        .from('conversation_participants')
+        .delete({ count: 'exact' })
+        .eq('conversation_id', selectedContact.conversationId)
+        .eq('user_id', currentUser.id)
+
+      if (leaveError) throw leaveError
+      if (count === 0) throw new Error("Could not leave group (permission denied or already left)")
+
+      // 2. Optimistic UI updates
+      const updatedContacts = contacts.filter(c => c.conversationId !== selectedContact.conversationId)
+      setContacts(updatedContacts)
+      setSelectedContact(null)
+      setShowGroupDetails(false)
+
+      toast.success("You have left the group", { id: toastId })
+
+      // 3. Clear any selected state or route
+      router.push('/chat')
+
+    } catch (error) {
+      console.error('Error leaving group:', error)
+      toast.error("Failed to leave group", { id: toastId })
+    } finally {
+      setIsLeavingGroup(false)
+    }
+  }
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 
   // Helpers
   const getInitials = (name: string) => {
@@ -694,9 +996,15 @@ export default function ChatPage() {
   )
 
   // Other UI handlers (simplified for now)
+<<<<<<< HEAD
   const handleEmojiClick = (emoji: string) => {
     setNewMessage(prev => prev + emoji)
     setShowEmojiPicker(false)
+=======
+  // Modified to allow multiple emojis without closing
+  const handleEmojiClick = (emojiData: any) => {
+    setNewMessage(prev => prev + emojiData.emoji)
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   }
 
   const toggleEmojiPicker = () => setShowEmojiPicker(!showEmojiPicker)
@@ -862,6 +1170,123 @@ export default function ChatPage() {
     }
   }
 
+<<<<<<< HEAD
+=======
+  const handleAddMembers = async (newMemberIds: string[]) => {
+    if (!selectedContact || !currentUser) return
+
+    try {
+      // Add members via Supabase
+      const { error } = await supabase
+        .from('conversation_participants')
+        .insert(
+          newMemberIds.map(id => ({
+            conversation_id: selectedContact.conversationId,
+            user_id: id
+          }))
+        )
+
+      if (error) throw error
+
+      toast.success("Members added successfully")
+
+      await fetchConversations(currentUser.id)
+
+      // Force refresh selected contact if needed, or rely on effect.
+      // We can also fetch the updated participants specifically to update the UI immediately
+      // but fetchConversations should handle it.
+
+    } catch (e) {
+      console.error("Error adding members:", e)
+      toast.error("Failed to add members")
+    }
+  }
+
+  const prepareAddMembers = async () => {
+    if (!currentUser) return
+    setLoadingCandidates(true)
+    setShowAddMemberModal(true)
+
+    try {
+      // 1. Fetch my connections
+      const { data: connections, error } = await supabase
+        .from('connections')
+        .select(`
+                    id,
+                    requester_id,
+                    recipient_id,
+                    status,
+                    requester:profiles!requester_id(*),
+                    recipient:profiles!recipient_id(*)
+                `)
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+
+      if (error) throw error
+
+      // 2. Filter out those who are ALREADY in the group
+      // Handle different participant structures (rpc vs manual join)
+      const currentParticipantIds = new Set(selectedContact?.participants?.map((p: any) => p.user_id || p.id) || [])
+
+      const candidates = connections
+        .map((conn: any) => {
+          const isRequester = conn.requester_id === currentUser.id
+          const friend = isRequester ? conn.recipient : conn.requester
+          return {
+            id: friend.id,
+            name: friend.full_name,
+            avatar: friend.avatar_url,
+            branch: friend.branch,
+            semester: friend.semester
+          }
+        })
+        .filter((c: any) => !currentParticipantIds.has(c.id))
+
+      setAvailableCandidates(candidates)
+
+    } catch (error) {
+      console.error("Error fetching candidates:", error)
+      toast.error("Could not load friends list")
+    } finally {
+      setLoadingCandidates(false)
+    }
+  }
+
+  const handleConnectMember = async (targetId: string, name: string) => {
+    if (!currentUser) return
+
+    try {
+      const { error } = await supabase
+        .from('connections')
+        .insert({
+          requester_id: currentUser.id,
+          recipient_id: targetId,
+          status: 'pending'
+        })
+
+      if (error) throw error
+
+      toast.success(`Connection request sent to ${name}`)
+      // Optimistic update
+      setMemberConnectionStatus(prev => ({ ...prev, [targetId]: 'pending' }))
+    } catch (e) {
+      console.error("Error connecting:", e)
+      toast.error("Failed to send request")
+    }
+  }
+
+  const handleMessageMember = async (member: any) => {
+    setShowGroupDetails(false)
+    await startChatWithStudent({
+      id: member.id,
+      name: member.name,
+      avatar: member.avatar,
+      branch: "Unknown", // Required by interface but not critical for chat start
+      semester: "Unknown"
+    } as any)
+  }
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   const handleStudentInfoClick = async (targetUserId?: string) => {
     // Determine the ID to fetch
     // If targetUserId is passed, use it (Group member click)
@@ -938,6 +1363,72 @@ export default function ChatPage() {
     setSelectedStudentInfo(null)
   }
 
+<<<<<<< HEAD
+=======
+  const handleUpdateGroup = async (name: string, description: string, avatarBlob: Blob | null) => {
+    if (!selectedContact?.conversationId || !currentUser) return
+
+    setIsUpdatingGroup(true)
+    const toastId = toast.loading("Updating group...")
+
+    try {
+      let publicUrl = selectedContact.avatar
+
+      // 1. Upload new avatar if present
+      if (avatarBlob) {
+        const timestamp = Date.now()
+        const fileExt = 'webp'
+        const filePath = `groups/${selectedContact.conversationId}_${timestamp}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars') // Using 'avatars' bucket as per plan, or 'chat-attachments' if avatars not accessible? Plan said 'avatars'.
+          .upload(filePath, avatarBlob, {
+            upsert: true,
+            contentType: 'image/webp'
+          })
+
+        if (uploadError) throw uploadError
+
+        const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        publicUrl = data.publicUrl
+      }
+
+      // 2. Update conversation
+      const { error: updateError } = await supabase
+        .from('conversations')
+        .update({
+          name: name,
+          description: description,
+          group_avatar: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedContact.conversationId)
+
+      if (updateError) throw updateError
+
+      toast.success("Group updated successfully", { id: toastId })
+      setShowGroupDetails(false)
+
+      // Refresh list
+      fetchConversations(currentUser.id)
+
+      // Update selected contact locally to reflect changes immediately
+      setSelectedContact(prev => prev ? ({
+        ...prev,
+        name: name,
+        avatar: publicUrl,
+        description: description // Now updating description correctly
+      }) : null)
+
+    } catch (error) {
+      console.error('Error updating group:', error)
+      toast.error("Failed to update group", { id: toastId })
+    } finally {
+      setIsUpdatingGroup(false)
+    }
+  }
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   const handleDeleteChat = () => setShowDeleteModal(true)
   const confirmDeleteChat = async () => {
     if (!selectedContact?.conversationId) return
@@ -1075,6 +1566,72 @@ export default function ChatPage() {
     }
   }
 
+<<<<<<< HEAD
+=======
+  const toggleReaction = async (messageId: number, emoji: string) => {
+    if (!currentUser) return
+
+    try {
+      // Optimistic update
+      setMessages(prev => prev.map(msg => {
+        if (msg.id !== messageId) return msg
+
+        const existingReactions = msg.reactions || []
+        const existingReactionIndex = existingReactions.findIndex(r => r.emoji === emoji)
+        const userHasReacted = existingReactionIndex >= 0 && existingReactions[existingReactionIndex].users.includes(currentUser.id)
+
+        let newReactions
+        if (userHasReacted) {
+          // Remove reaction
+          newReactions = existingReactions.map(r => {
+            if (r.emoji === emoji) {
+              return { ...r, count: r.count - 1, users: r.users.filter(u => u !== currentUser.id) }
+            }
+            return r
+          }).filter(r => r.count > 0)
+
+          // Delete from DB
+          supabase
+            .from('message_reactions')
+            .delete()
+            .eq('message_id', messageId)
+            .eq('user_id', currentUser.id)
+            .eq('reaction', emoji)
+            .then(({ error }) => { if (error) console.error(error) })
+
+        } else {
+          // Add reaction
+          if (existingReactionIndex >= 0) {
+            newReactions = existingReactions.map(r => {
+              if (r.emoji === emoji) {
+                return { ...r, count: r.count + 1, users: [...r.users, currentUser.id] }
+              }
+              return r
+            })
+          } else {
+            newReactions = [...existingReactions, { emoji, count: 1, users: [currentUser.id] }]
+          }
+
+          // Add to DB
+          supabase
+            .from('message_reactions')
+            .insert({
+              message_id: messageId,
+              user_id: currentUser.id,
+              reaction: emoji
+            })
+            .then(({ error }) => { if (error) console.error(error) })
+        }
+
+        return { ...msg, reactions: newReactions }
+      }))
+
+    } catch (error) {
+      console.error('Error toggling reaction:', error)
+    }
+  }
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1244,7 +1801,17 @@ export default function ChatPage() {
                       <div className="min-w-0 flex-1">
                         <h3
                           className="font-semibold flex items-center gap-2 text-sm truncate cursor-pointer hover:text-primary transition-colors"
+<<<<<<< HEAD
                           onClick={handleStudentInfoClick}
+=======
+                          onClick={() => {
+                            if (selectedContact.isGroup) {
+                              setShowGroupDetails(true)
+                            } else {
+                              handleStudentInfoClick()
+                            }
+                          }}
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                         >
                           <span className="truncate">{selectedContact.name}</span>
                           {selectedContact.isGroup && (
@@ -1274,6 +1841,7 @@ export default function ChatPage() {
                         <MoreVertical className="w-4 h-4" />
                       </Button>
 
+<<<<<<< HEAD
                       {/* Create Group Button */}
                       <Button
                         variant="ghost"
@@ -1286,10 +1854,13 @@ export default function ChatPage() {
                       >
                         <Users className="h-4 w-4" />
                       </Button>
+=======
+>>>>>>> 8c01869 (Chat Page 99% Completed)
 
                       {showDropdown && (
                         <div className="absolute right-0 top-10 bg-card border border-border rounded-lg shadow-lg z-50 w-48">
                           <div className="p-1">
+<<<<<<< HEAD
                             {selectedContact?.role !== 'teacher' && (
                               <button
                                 onClick={() => {
@@ -1352,6 +1923,128 @@ export default function ChatPage() {
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete Chat
                             </button>
+=======
+                            {selectedContact?.isGroup ? (
+                              /* GROUP MENU */
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setShowGroupDetails(true)
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Users className="w-4 h-4 mr-2" />
+                                  Group Info
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    prepareAddMembers()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <UserPlus className="w-4 h-4 mr-2" />
+                                  Add member
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handlePinChat()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Pin className="w-4 h-4 mr-2" />
+                                  {selectedContact.isPinned ? "Unpin Group" : "Pin Group"}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    toast.info("Export Chat feature coming soon")
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Chat
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleLeaveGroup()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm text-destructive"
+                                >
+                                  <LogOut className="w-4 h-4 mr-2" />
+                                  Leave Group
+                                </button>
+                              </>
+                            ) : (
+                              /* 1-ON-1 MENU (Existing) */
+                              <>
+                                {selectedContact?.role !== 'teacher' && (
+                                  <button
+                                    onClick={() => {
+                                      handleStudentInfoClick()
+                                      setShowDropdown(false)
+                                    }}
+                                    className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                  >
+                                    <User className="w-4 h-4 mr-2" />
+                                    View Profile
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    handlePinChat()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Pin className="w-4 h-4 mr-2" />
+                                  {selectedContact.isPinned ? "Unpin Chat" : "Pin Chat"}
+                                </button>
+                                <button
+                                  onClick={handleExportChat}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Chat
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleClearChat()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Clear Chat History
+                                </button>
+                                {(currentUser?.user_metadata?.role !== 'teacher' && selectedContact.role !== 'teacher') && (
+                                  <button
+                                    onClick={() => {
+                                      handleDisconnectStudent()
+                                      setShowDropdown(false)
+                                    }}
+                                    className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm text-destructive"
+                                  >
+                                    <UserMinus className="w-4 h-4 mr-2" />
+                                    Disconnect
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    handleDeleteChat()
+                                    setShowDropdown(false)
+                                  }}
+                                  className="w-full flex items-center px-2 py-1.5 text-sm hover:bg-muted rounded-sm text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Chat
+                                </button>
+                              </>
+                            )}
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                           </div>
                         </div>
                       )}
@@ -1391,7 +2084,11 @@ export default function ChatPage() {
                           )}
 
                           <div
+<<<<<<< HEAD
                             className={`relative shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
+=======
+                            className={`group relative shadow-sm min-w-[4rem] flex flex-col ${message.sender === "user"
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                               ? "bg-slate-700 text-white rounded-2xl rounded-tr-sm"
                               : "bg-gray-200 dark:bg-zinc-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-sm"
                               } `}
@@ -1449,11 +2146,65 @@ export default function ChatPage() {
                               </div>
                             )}
 
+<<<<<<< HEAD
                             {/* Timestamp */}
                             <div className={`text-[10px] select-none text-right px-3 pb-1.5 -mt-1 ${message.type === 'image' ? 'absolute bottom-2 right-2 bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm' : ''
                               } ${message.sender === "user" && message.type !== 'image' ? "text-slate-300" : "text-gray-500"
                               } `}>
                               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+=======
+                            {/* Reactions Display */}
+                            {!selectedContact?.isGroup && message.reactions && message.reactions.length > 0 && (
+                              <div className="flex flex-wrap gap-1 px-2 pb-2 mt-1">
+                                {message.reactions.map((reaction, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => toggleReaction(message.id, reaction.emoji)}
+                                    className={`text-[10px] px-1.5 py-0.5 rounded-full border flex items-center gap-1 transition-colors ${reaction.users.includes(currentUser?.id)
+                                      ? "bg-primary/20 border-primary/30 text-primary-foreground"
+                                      : "bg-background/40 border-border/20 text-muted-foreground hover:bg-background/60"
+                                      } shadow-sm backdrop-blur-sm`}
+                                  >
+                                    <span>{reaction.emoji}</span>
+                                    {reaction.count > 1 && <span className="font-semibold">{reaction.count}</span>}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Hover Reaction Trigger */}
+                            {!selectedContact?.isGroup && (
+                              <div className={`absolute top-1/2 -translate-y-1/2 ${message.sender === 'user' ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition-opacity p-1 z-10`}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full bg-background/80 shadow-sm border border-border/50">
+                                      <Smile className="w-3 h-3 text-muted-foreground" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align={message.sender === 'user' ? 'end' : 'start'} className="flex p-1 gap-1 min-w-0 w-auto">
+                                    {REACTION_EMOJIS.map(emoji => (
+                                      <DropdownMenuItem
+                                        key={emoji}
+                                        onClick={() => toggleReaction(message.id, emoji)}
+                                        className="hover:bg-muted p-1.5 rounded text-lg leading-none transition-colors cursor-pointer justify-center"
+                                      >
+                                        {emoji}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )}
+
+                            {/* Timestamp & Read Status */}
+                            <div className={`text-[10px] select-none text-right px-3 pb-1.5 -mt-1 flex items-center justify-end gap-1 ${message.type === 'image' ? 'absolute bottom-2 right-2 bg-black/40 text-white px-1.5 py-0.5 rounded-full backdrop-blur-sm' : ''
+                              } ${message.sender === "user" && message.type !== 'image' ? "text-slate-300" : "text-gray-500"
+                              } `}>
+                              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {message.sender === "user" && !selectedContact?.isGroup && (
+                                message.isRead ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Check className="w-3 h-3" />
+                              )}
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                             </div>
                           </div>
                         </div>
@@ -1464,7 +2215,11 @@ export default function ChatPage() {
                 </ScrollArea>
 
                 {/* Message Input */}
+<<<<<<< HEAD
                 <div className="p-2 sm:p-3 border-t border-border bg-card/30 flex-shrink-0">
+=======
+                <div className="relative p-2 sm:p-3 border-t border-border bg-card/30 flex-shrink-0">
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                   <div className="flex items-end space-x-2 min-w-0">
                     <div className="flex space-x-1 flex-shrink-0">
                       <Button
@@ -1490,6 +2245,10 @@ export default function ChatPage() {
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+<<<<<<< HEAD
+=======
+                        onFocus={() => setShowEmojiPicker(false)}
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                         onKeyPress={handleKeyPress}
                         className="pr-10 h-9 min-w-0"
                       />
@@ -1512,6 +2271,7 @@ export default function ChatPage() {
 
                   {/* Emoji Picker */}
                   {showEmojiPicker && (
+<<<<<<< HEAD
                     <div className="absolute bottom-full left-0 mb-2 p-2 bg-card border border-border rounded-lg shadow-lg z-10">
                       <div className="grid grid-cols-8 gap-1">
                         {["😀", "😂", "😍", "🥰", "😎", "🤔", "😢", "😡", "👍", "👎", "❤️", "🎉", "🔥", "💯", "✨", "🎯"].map((emoji) => (
@@ -1526,6 +2286,17 @@ export default function ChatPage() {
                           </Button>
                         ))}
                       </div>
+=======
+                    <div className="absolute bottom-16 right-4 z-20 shadow-xl rounded-xl">
+                      <EmojiPicker
+                        onEmojiClick={handleEmojiClick}
+                        width={300}
+                        height={400}
+                        searchDisabled={false}
+                        skinTonesDisabled
+                        previewConfig={{ showPreview: false }}
+                      />
+>>>>>>> 8c01869 (Chat Page 99% Completed)
                     </div>
                   )}
                 </div>
@@ -1566,6 +2337,79 @@ export default function ChatPage() {
         accept="image/*"
       />
 
+<<<<<<< HEAD
+=======
+      {selectedContact && selectedContact.isGroup && (
+        <GroupDetailsPopup
+          isOpen={showGroupDetails}
+          onClose={() => setShowGroupDetails(false)}
+          groupName={selectedContact.name}
+          groupAvatar={selectedContact.avatar}
+          members={(selectedContact.participants?.map((p: any) => {
+            const id = p.id || p.user_id
+            return {
+              id: id,
+              name: p.full_name || "Unknown",
+              avatar: p.avatar_url,
+              role: p.role,
+              isConnected: memberConnectionStatus[id] === 'accepted',
+              connectionStatus: memberConnectionStatus[id] || 'none',
+              isCurrentUser: id === currentUser?.id
+            }
+          }) || []).sort((a, b) => {
+            if (a.isCurrentUser) return -1
+            if (b.isCurrentUser) return 1
+            return 0
+          })}
+          onLeaveGroup={handleLeaveGroup}
+          isLeaving={isLeavingGroup}
+          onAddMember={prepareAddMembers}
+          onConnect={handleConnectMember}
+          onMessage={handleMessageMember}
+          currentUserId={currentUser?.id}
+          groupDescription={selectedContact?.description}
+          onUpdateGroup={handleUpdateGroup}
+          isUpdating={isUpdatingGroup}
+        />
+      )}
+
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave this group? You will no longer receive messages from this group.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLeaveGroup}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+              disabled={isLeavingGroup}
+            >
+              {isLeavingGroup ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Leaving...
+                </>
+              ) : (
+                "Leave Group"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AddMemberDialog
+        isOpen={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        onAdd={handleAddMembers}
+        candidates={availableCandidates}
+        isLoading={loadingCandidates}
+      />
+
+>>>>>>> 8c01869 (Chat Page 99% Completed)
       {/* New Chat Modal */}
       {
         showNewChatModal && (

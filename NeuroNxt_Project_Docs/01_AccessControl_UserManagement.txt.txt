@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ==============================================================
               NEURONXT - ACCESS CONTROL & USER MANAGEMENT
 ==============================================================
@@ -143,3 +144,150 @@ Table: users
 - Admin dashboards with full statistics & analytics.
 
 ==============================================================
+=======
+==============================================================
+              NEURONXT - ACCESS CONTROL & USER MANAGEMENT
+==============================================================
+
+1. OVERVIEW
+------------
+NeuroNxt follows a **multi-tenant access control model**.
+Each institute/college/university functions as an **independent tenant**. 
+All data — notes, AI outputs, user profiles — is **completely isolated per institute**.  
+No user can access another institute's data.
+
+Users are linked to their institute via a **unique INSTITUTE_CODE**. 
+Roles include **Institute Admin, Teacher/Faculty, and Student**.
+
+--------------------------------------------------------------
+
+2. CORE CONCEPT
+---------------
+- Each institute has a **unique INSTITUTE_CODE**.
+- Database operations (CRUD) are filtered using this code.
+- Enforces **strict data isolation**.
+- Tokens (JWT) include institute_code for secure access validation.
+
+--------------------------------------------------------------
+
+3. ROLES & ACCESS LEVELS
+-------------------------
++-------------------+------------------------------------------+-----------------------------------------------+
+| ROLE              | DESCRIPTION                              | CAPABILITIES                                 |
++-------------------+------------------------------------------+-----------------------------------------------+
+| INSTITUTE ADMIN   | Highest authority in institute.           | - Register institute                          |
+|                   |                                           | - Add/manage teachers and students           |
+|                   |                                           | - Approve/reject student registrations       |
+|                   |                                           | - Full edit permissions for all user fields  |
+|                   |                                           | - Monitor activity & analytics                |
++-------------------+------------------------------------------+-----------------------------------------------+
+| TEACHER / FACULTY | Assigned by Admin.                        | - Manage classes, notes, questions           |
+|                   |                                           | - View student progress & analytics           |
++-------------------+------------------------------------------+-----------------------------------------------+
+| STUDENT           | Registered under valid institute_code.    | - Access SmartNotes, AI tools, planner       |
+|                   |                                           | - View only their institute's data           |
++-------------------+------------------------------------------+-----------------------------------------------+
+
+--------------------------------------------------------------
+
+4. STUDENT REGISTRATION
+-----------------------
+Fields & Rules:
++---------------------------------------------+-------------------------------+
+| FIELD NAME                                  | RULES / NOTES                 |
++---------------------------------------------+-------------------------------+
+| Full Name                                   | Required; NOT editable after   |
+|                                             | registration.                 |
++---------------------------------------------+-------------------------------+
+| Institute / College / University Code       | Required; NOT editable after   |
+|                                             | registration. Validated against|
+|                                             | database. If code not found → |
+|                                             | "Institute code invalid.      |
+|                                             | Contact your admin."          |
++---------------------------------------------+-------------------------------+
+| Email                                       | Required; used for OTP verification. |
++---------------------------------------------+-------------------------------+
+| Enrollment Number                           | Validated & approved by admin.|
+|                                             | Students cannot log in until approved. |
++---------------------------------------------+-------------------------------+
+| Branch                                      | Dropdown (currently only 'Computer Technology'). |
++---------------------------------------------+-------------------------------+
+| Semester                                    | Dropdown (1–6).               |
++---------------------------------------------+-------------------------------+
+| Password                                    | Must meet strength rules:      |
+|                                             | - Minimum 8 chars             |
+|                                             | - 1 uppercase                 |
+|                                             | - 1 number                    |
+|                                             | - 1 special character         |
++---------------------------------------------+-------------------------------+
+
+--------------------------------------------------------------
+
+5. REGISTRATION WORKFLOW
+-------------------------
+1. Student enters all registration details.
+2. **Institute Code Validation:**  
+   - If invalid → message: "Institute code invalid. Contact your admin."
+3. **Email OTP Verification.**
+4. Registration enters **pending approval**.
+5. Admin reviews registration:
+   - Approves → student can log in.
+   - Rejects → student notified.
+6. Admin can edit **any field** if needed, including immutable fields.
+
+--------------------------------------------------------------
+
+6. LOGIN & AUTHENTICATION
+--------------------------
+- Approved students login via **Email + Password**.
+- JWT token issued: { user_id, role, institute_code, expiration_time }.
+- All requests validated with JWT & institute_code.
+- Teachers and Admins follow similar login flow.
+
+--------------------------------------------------------------
+
+7. DATA ISOLATION & SECURITY
+-----------------------------
+- Every table includes `institute_code` field.
+- Queries filtered by institute_code.
+- Role-based permissions enforced on all actions.
+- Passwords hashed & salted (bcrypt / Argon2).
+- Audit logs for all key actions.
+- Immutable fields for students: Full Name, Institute Code, Enrollment No (editable only by admin).
+
+--------------------------------------------------------------
+
+8. DATABASE STRUCTURE (Simplified)
+-----------------------------------
+Table: users
+
++-------------------------+-------------------------+
+| FIELD                  | TYPE / DESCRIPTION       |
++-------------------------+-------------------------+
+| user_id (PK)           | Unique user identifier   |
+| institute_code          | Foreign key reference    |
+| role                    | ENUM('admin','teacher','student') |
+| full_name               | TEXT (immutable for student) |
+| email                   | TEXT (unique)            |
+| enrollment_no            | TEXT (immutable for student) |
+| branch                  | TEXT (default: 'Computer Tech') |
+| semester                | INTEGER (1–6)            |
+| password_hash            | TEXT                     |
+| otp_verified            | BOOLEAN                  |
+| created_at              | DATETIME                 |
++-------------------------+-------------------------+
+
+--------------------------------------------------------------
+
+9. FUTURE SCOPE
+----------------
+- Multi-branch support.
+- Single Sign-On (SSO) integration with institute accounts.
+- Mobile-first registration flow.
+- Profile photo upload.
+- Custom subdomains for institutes: e.g., abcuniversity.neuronxt.ai
+- Optional cross-institute collaboration (controlled sharing).
+- Admin dashboards with full statistics & analytics.
+
+==============================================================
+>>>>>>> 8c01869 (Chat Page 99% Completed)
