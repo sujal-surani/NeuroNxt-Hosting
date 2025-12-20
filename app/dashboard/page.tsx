@@ -69,7 +69,9 @@ export default function Dashboard() {
 
   const [notesStudiedCount, setNotesStudiedCount] = useState(0)
   const [userBranch, setUserBranch] = useState("")
+  const [userSemester, setUserSemester] = useState("")
   const [studyStreak, setStudyStreak] = useState(0)
+  const [totalNotesCount, setTotalNotesCount] = useState(0)
 
   useEffect(() => {
     const getData = async () => {
@@ -80,15 +82,18 @@ export default function Dashboard() {
         // Fetch User Profile for Branch
         const { data: profile } = await supabase
           .from('profiles')
-          .select('branch, is_onboarded, study_streak')
+          .select('branch, semester, is_onboarded, study_streak')
           .eq('id', user.id)
           .single()
+
+        console.log("Dashboard Profile Fetch:", profile)
 
         if (profile) {
           if (!profile.is_onboarded) {
             setShowOnboarding(true)
           }
           setUserBranch(profile.branch || "")
+          setUserSemester(profile.semester || "")
           setStudyStreak(profile.study_streak || 0)
         }
 
@@ -104,6 +109,31 @@ export default function Dashboard() {
 
         if (updatedProfile) {
           setStudyStreak(updatedProfile.study_streak || 0)
+        }
+
+        // Fetch Total Notes Count for Branch & Semester
+        if (profile?.branch && profile?.semester) {
+          // Robust parsing: extract first number from string "Sem 3", "3rd", "3" etc.
+          const semesterMatch = profile.semester.toString().match(/\d+/)
+          const semesterInt = semesterMatch ? parseInt(semesterMatch[0]) : NaN
+
+          // Normalize Branch: "computer-technology" -> "Computer Technology" to match Notes table
+          const formattedBranch = profile.branch
+            .split('-')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')
+
+          if (!isNaN(semesterInt)) {
+            const { count: total, error: totalError } = await supabase
+              .from('notes')
+              .select('*', { count: 'exact', head: true })
+              .eq('branch', formattedBranch) // Use formatted branch
+              .eq('semester', semesterInt)
+
+            if (!totalError && total !== null) {
+              setTotalNotesCount(total)
+            }
+          }
         }
 
         // Fetch Notes Studied Count
@@ -371,14 +401,22 @@ export default function Dashboard() {
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{notesStudiedCount}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total : {notesStudiedCount} ({(() => {
-                      const b = userBranch || ""
-                      if (b === "Computer Technology" || b.toLowerCase() === "computer-technology") return "CM"
-                      return b.split(/[\s-]+/).map(w => w[0]).join("").toUpperCase()
-                    })()})
-                  </p>
+                  <div className="flex flex-col">
+                    <div className="text-3xl font-bold">{notesStudiedCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Total Notes: {totalNotesCount}
+                      {userBranch && userSemester && (
+                        <span className="ml-1">
+                          ( {(() => {
+                            const b = userBranch || ""
+                            let abbr = b.split(/[\s-]+/).map(w => w[0]).join("").toUpperCase()
+                            if (b === "Computer Technology" || b.toLowerCase() === "computer-technology") abbr = "CM"
+                            return `${abbr} - Sem ${userSemester}`
+                          })()} )
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>

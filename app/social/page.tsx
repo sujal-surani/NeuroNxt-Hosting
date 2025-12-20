@@ -336,10 +336,12 @@ const SocialPage = () => {
     try {
       const { data, error } = await supabase
         .from('connections')
-        .insert({
+        .upsert({
           requester_id: user.id,
           recipient_id: person.id,
           status: 'pending'
+        }, {
+          onConflict: 'requester_id, recipient_id'
         })
         .select('*, recipient:profiles!recipient_id(*)')
         .single()

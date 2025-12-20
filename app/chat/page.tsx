@@ -147,6 +147,27 @@ export default function ChatPage() {
 
   const [contacts, setContacts] = useState<ChatContact[]>([])
   const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null)
+
+  // Sync selectedContact with contacts updates (for realtime status changes)
+  useEffect(() => {
+    if (selectedContact) {
+      const updatedContact = contacts.find(c => c.conversationId === selectedContact.conversationId)
+      if (updatedContact) {
+        // Check for impactful changes to avoid unnecessary re-renders
+        if (updatedContact.isDisconnected !== selectedContact.isDisconnected ||
+          updatedContact.isPinned !== selectedContact.isPinned ||
+          updatedContact.unreadCount !== selectedContact.unreadCount) {
+
+          setSelectedContact(prev => prev ? ({ ...prev, ...updatedContact }) : null)
+
+          // If disconnected, show toast only once
+          if (updatedContact.isDisconnected && !selectedContact.isDisconnected) {
+            setShowDisconnectedAlert(true)
+          }
+        }
+      }
+    }
+  }, [contacts])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
@@ -505,7 +526,7 @@ export default function ChatPage() {
         const isGroup = conv.is_group
         const lastMsg = conv.last_message
         const isPinned = conv.pinned_by ? conv.pinned_by.includes(userId) : false
-        const isDisconnected = false // Group logic doesn't really have 'disconnected' in same way
+        const isDisconnected = conv.status === 'disconnected'
 
         let displayName = conv.name
         let displayAvatar = conv.group_avatar
@@ -522,6 +543,8 @@ export default function ChatPage() {
         } else {
           // It's 1-on-1
           // Participants JSONB contains the OTHER user
+          // Note: The RPC returns an array, but for 1-on-1 it usually has 1 item (the other user).
+          // Sometimes it might be empty if the other user is hard deleted?
           const otherUser = conv.participants && conv.participants.length > 0 ? conv.participants[0] : null
 
           if (otherUser) {
@@ -754,6 +777,10 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact?.conversationId || !currentUser) return
+    if (selectedContact.isDisconnected) {
+      toast.error("This conversation is disconnected")
+      return
+    }
 
     const content = newMessage
     setNewMessage("") // Clear input immediately
@@ -2033,6 +2060,7 @@ export default function ChatPage() {
                         size="sm"
                         className="h-8 w-8 p-0"
                         onClick={() => fileInputRef.current?.click()}
+                        disabled={selectedContact?.isDisconnected}
                       >
                         <Paperclip className="w-4 h-4" />
                       </Button>
@@ -2041,6 +2069,7 @@ export default function ChatPage() {
                         size="sm"
                         className="h-8 w-8 p-0"
                         onClick={handleImageUpload}
+                        disabled={selectedContact?.isDisconnected}
                       >
                         <ImageIcon className="w-4 h-4" />
                       </Button>
@@ -2048,11 +2077,12 @@ export default function ChatPage() {
 
                     <div className="flex-1 relative min-w-0">
                       <Input
-                        placeholder="Type a message..."
+                        placeholder={selectedContact?.isDisconnected ? "This conversation is disconnected" : "Type a message..."}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onFocus={() => setShowEmojiPicker(false)}
                         onKeyPress={handleKeyPress}
+                        disabled={selectedContact?.isDisconnected}
                         className="pr-10 h-9 min-w-0"
                       />
                       <Button
@@ -2060,13 +2090,14 @@ export default function ChatPage() {
                         size="sm"
                         className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                         onClick={toggleEmojiPicker}
+                        disabled={selectedContact?.isDisconnected}
                       >
                         <Smile className="w-4 h-4" />
                       </Button>
                     </div>
 
                     <div className="flex space-x-1 flex-shrink-0">
-                      <Button onClick={sendMessage} disabled={!newMessage.trim()} size="sm" className="h-8">
+                      <Button onClick={sendMessage} disabled={!newMessage.trim() || selectedContact?.isDisconnected} size="sm" className="h-8">
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>
