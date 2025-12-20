@@ -2,203 +2,206 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Brain, Construction, Clock, Sparkles, CheckCircle, Menu, X } from "lucide-react"
+import { Building2, Menu, X, CheckCircle, Sparkles, Clock, Brain, ArrowRight, Star } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function PricingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background -z-10" />
+
       {/* Navigation */}
-      <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-primary">NeuroNxt</span>
-            </Link>
-
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                Features
-              </Link>
-              <Link href="/#stats" className="text-muted-foreground hover:text-foreground transition-colors">
-                Impact
-              </Link>
-              <Link href="/pricing" className="text-foreground font-medium">
-                Pricing
-              </Link>
-              <Link href="/auth/login">
-                <Button variant="outline">Sign In</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button>Get Started</Button>
-              </Link>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-primary/20">
+              <Brain className="h-5 w-5 text-primary-foreground" />
             </div>
+            <span className="text-xl font-bold tracking-tight text-foreground">NeuroNxt</span>
+          </Link>
 
-            <div className="md:hidden">
-              <Button variant="ghost" size="sm" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </Button>
-            </div>
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="/#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:scale-105 transform duration-200">Features</Link>
+            <Link href="/#platform" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:scale-105 transform duration-200">Platform</Link>
+            <Link href="/pricing" className="text-sm font-medium text-primary hover:text-primary transition-colors hover:scale-105 transform duration-200">Pricing</Link>
           </div>
 
-          {isMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-4">
-                <Link href="/#features" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Features
-                </Link>
-                <Link href="/#stats" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Impact
-                </Link>
-                <Link href="/pricing" className="text-foreground font-medium">
-                  Pricing
-                </Link>
-                <div className="flex flex-col space-y-2 pt-4">
-                  <Link href="/auth/login">
-                    <Button variant="outline" className="w-full bg-transparent">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/auth/register">
-                    <Button className="w-full">Get Started</Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <Link href="/auth/login">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 font-semibold px-6">
+                Login for students
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="space-y-4">
-            <Badge variant="secondary" className="px-4 py-2">
-              <Construction className="w-4 h-4 mr-2" />
-              Coming Soon
-            </Badge>
-            <h1 className="text-4xl sm:text-5xl font-bold text-balance">
-              Pricing Plans for <span className="text-primary">NeuroNxt</span>
+      <main className="pt-32 pb-20">
+        {/* Hero Section */}
+        <section className="relative px-6">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[150px] animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[150px] animate-pulse" />
+
+          <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-colors cursor-default">
+              <Star className="h-4 w-4 text-inherit fill-primary/20" />
+              <span className="text-sm font-semibold tracking-wide">Flexible Pricing</span>
+            </div>
+
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tighter text-foreground">
+              <span className="block drop-shadow-sm">Simple Pricing for</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neutral-800 via-slate-700 to-neutral-500 drop-shadow-sm pb-2">Your Institution</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              We're working hard to bring you flexible pricing options that fit your learning needs and budget.
+
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
+              Choose the perfect plan for your educational institution. All plans include core features with scalable options.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Status Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          <Card className="border-2 border-dashed border-muted-foreground/20 bg-muted/10">
-            <CardContent className="p-12 text-center space-y-8">
-              <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                <Clock className="w-12 h-12 text-primary" />
-              </div>
+        {/* Status Section */}
+        <section className="relative py-20 px-6">
+          <div className="relative z-10 max-w-5xl mx-auto">
+            <Card className="group relative overflow-hidden bg-card border-border/50 hover:border-slate-500/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/5">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              <div className="space-y-4">
-                <h2 className="text-3xl font-bold">Pricing Plans Under Development</h2>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Our team is carefully crafting pricing plans that provide exceptional value for students, educators,
-                  and institutions. We want to ensure our pricing is fair, transparent, and accessible to learners
-                  everywhere.
-                </p>
-              </div>
+              <div className="relative p-8 text-center space-y-6">
+                <div className="w-16 h-16 mx-auto bg-secondary rounded-full flex items-center justify-center border border-border/50 group-hover:scale-110 transition-transform duration-500">
+                  <Clock className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                <div className="space-y-3">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto">
-                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <h3 className="font-semibold">Free Tier</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Basic AI study tools and note-taking features for individual learners
+                <div className="space-y-4">
+                  <Badge variant="secondary" className="px-3 py-1 bg-primary/5 text-primary border-primary/10 text-xs">
+                    Coming Soon
+                  </Badge>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">Pricing Plans Under Development</h2>
+                  <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+                    Our team is carefully crafting pricing plans that provide exceptional value for institutions.
+                    We want to ensure our pricing is fair, transparent, and accessible to all educational organizations.
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto">
-                    <Sparkles className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <h3 className="font-semibold">Premium Plans</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Advanced AI features, unlimited storage, and collaboration tools
-                  </p>
+                {/* Plan Preview Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto pt-6">
+                  {[
+                    { icon: Sparkles, title: "Premium Plans", desc: "Advanced features and unlimited access" },
+                    { icon: Brain, title: "Enterprise", desc: "Custom solutions for large universities" }
+                  ].map((plan, i) => (
+                    <Card key={i} className="relative overflow-hidden bg-background/50 border-border/50 hover:border-primary/20 transition-all hover:bg-background hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5">
+                      <div className="relative p-4 space-y-3">
+                        <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center mx-auto">
+                          <plan.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
+                        <h3 className="font-bold text-foreground text-base">{plan.title}</h3>
+                        <p className="text-xs text-muted-foreground">{plan.desc}</p>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
 
-                <div className="space-y-3">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto">
-                    <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <h3 className="font-semibold">Institution Plans</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Custom solutions for schools, universities, and educational organizations
+                <div className="space-y-6 pt-8 border-t border-border/50">
+                  <p className="text-muted-foreground">
+                    <strong className="text-foreground">Expected Launch:</strong> Q2 2025
                   </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  <strong>Expected Launch:</strong> Q2 2024
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href="/auth/register">
-                    <Button size="lg" className="text-lg px-8 py-6">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button
+                      size="lg"
+                      onClick={() => toast.info("Pricing plans will be available in Q2 2025.")}
+                      className="h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 group font-semibold"
+                    >
                       Get Early Access
-                      <Sparkles className="w-5 h-5 ml-2" />
+                      <Sparkles className="ml-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
                     </Button>
-                  </Link>
-                  <Link href="/">
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-transparent">
-                      Learn More About Features
-                    </Button>
-                  </Link>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/30">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <h3 className="text-2xl font-bold">Stay Updated</h3>
-          <p className="text-muted-foreground">
-            Be the first to know when our pricing plans are available and get exclusive early-bird discounts.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <Button>Notify Me</Button>
+            </Card>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t bg-muted/20">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Brain className="w-5 h-5 text-primary-foreground" />
+        {/* Newsletter Section */}
+        <section className="relative py-20 px-6 overflow-hidden bg-card border-y border-border/50">
+          <div className="relative z-10 max-w-2xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary">
+              <Sparkles className="h-4 w-4 text-inherit" />
+              <span className="text-sm font-semibold">Stay Updated</span>
             </div>
-            <span className="text-xl font-bold text-primary">NeuroNxt</span>
+
+            <h3 className="text-3xl font-bold text-foreground">Be the First to Know</h3>
+            <p className="text-muted-foreground text-lg">
+              Get notified when our pricing plans are available and receive exclusive early-bird discounts.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-4">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground shadow-sm"
+              />
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6 h-auto">
+                Notify Me
+              </Button>
+            </div>
           </div>
-          <p className="text-muted-foreground text-sm">
-            &copy; 2024 NeuroNxt. All rights reserved. Built for students, by students.
-          </p>
-        </div>
-      </footer>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-12 px-6 bg-background">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid md:grid-cols-4 gap-8 mb-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+                    <Brain className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-lg font-bold text-foreground">NeuroNxt</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Transforming educational institutions with AI-powered learning platforms.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Platform</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li><Link href="/" className="hover:text-primary transition-colors">Features</Link></li>
+                  <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Company</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">About</button></li>
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Contact</button></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Legal</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Privacy</button></li>
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Terms</button></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+              <span>&copy; {new Date().getFullYear()} NeuroNxt. All rights reserved.</span>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>System Online</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   )
 }

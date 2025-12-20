@@ -19,13 +19,17 @@ import {
   ArrowRight,
   Menu,
   X,
-  Zap,
   Shield,
   BarChart3,
-  Clock,
-  Globe,
+  Search,
   Sparkles,
-  Check
+  Zap,
+  Clock,
+  UserPlus,
+  Share2,
+  ChevronDown,
+  Star,
+  Bookmark
 } from "lucide-react"
 import Link from "next/link"
 
@@ -33,6 +37,7 @@ export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const [scrollY, setScrollY] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -53,461 +58,370 @@ export default function HomePage() {
       }
     }
     checkUser()
+
+    const handleScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false)
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setShowOnboarding(false)
-    router.refresh()
-  }
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/30">
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background -z-10" />
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">NeuroNxt</span>
-            </Link>
-
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#platform" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Platform</a>
-              <a href="#benefits" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Benefits</a>
-              <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Features</a>
-              <Link href="/pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Pricing</Link>
-
-              <div className="flex items-center gap-3 pl-4 border-l">
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm">Login</Button>
-                </Link>
-                <Link href="/pricing">
-                  <Button size="sm" className="shadow-lg shadow-primary/20">Get Started</Button>
-                </Link>
-              </div>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrollY > 50 ? 'bg-background/80 backdrop-blur-xl border-b border-border/50' : ''}`}>
+        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-primary/20">
+              <Brain className="h-5 w-5 text-primary-foreground" />
             </div>
+            <span className="text-xl font-bold tracking-tight text-foreground">NeuroNxt</span>
+          </Link>
 
-            <div className="md:hidden">
-              <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <div className="hidden md:flex items-center gap-8">
+            {[
+              { label: 'Features', action: 'scroll', target: 'features' },
+              { label: 'Platform', action: 'scroll', target: 'platform' },
+              { label: 'Pricing', action: 'route', target: '/pricing' },
+              { label: 'Join', action: 'scroll', target: 'join' }
+            ].map((item) => (
+              item.action === 'scroll' ? (
+                <button
+                  key={item.label}
+                  onClick={() => document.getElementById(item.target)?.scrollIntoView({ behavior: 'smooth' })}
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link
+                  key={item.label}
+                  href={item.target}
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors hover:scale-105 transform duration-200"
+                >
+                  {item.label}
+                </Link>
+              )
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link href="/auth/login">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 hover:shadow-primary/30 font-semibold px-6">
+                Login for students
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
+            </Link>
           </div>
         </div>
-
-        {isMenuOpen && (
-          <div className="md:hidden border-t p-4 bg-background/95 backdrop-blur-lg">
-            <div className="flex flex-col space-y-4">
-              <a href="#platform" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium p-2 hover:bg-muted rounded">Platform</a>
-              <a href="#benefits" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium p-2 hover:bg-muted rounded">Benefits</a>
-              <a href="#features" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium p-2 hover:bg-muted rounded">Features</a>
-              <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="text-sm font-medium p-2 hover:bg-muted rounded">Pricing</Link>
-              <div className="pt-2 flex flex-col gap-2">
-                <Link href="/auth/login"><Button variant="outline" className="w-full">Login</Button></Link>
-                <Link href="/pricing"><Button className="w-full">Get Started</Button></Link>
-              </div>
-            </div>
-          </div>
-        )}
       </nav>
 
       <main>
+        {/* Split Hero */}
+        <section className="min-h-screen relative flex items-center pt-16 pb-8 overflow-hidden">
+          {/* Grid Background */}
+          {/* Gradient Orbs */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[150px] animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[150px] animate-pulse" />
 
-        {/* Hero - Modern Asymmetric Layout */}
-        <section className="relative py-20 md:py-28 px-4 overflow-hidden">
-          {/* Animated background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background -z-10" />
-          <div className="absolute top-20 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -z-10 animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -z-10" />
-
-          <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-12 gap-8 items-center">
-              {/* Left content - 7 columns */}
-              <div className="lg:col-span-7 space-y-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-primary">AI-Powered Learning Platform</span>
+          <div className="relative z-10 mx-auto max-w-7xl px-6 w-full">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Content */}
+              <div className="space-y-8" style={{ transform: `translateY(${scrollY * 0.1}px)` }}>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border/50 bg-secondary/50 backdrop-blur-sm shadow-sm">
+                  <Star className="h-3 w-3 text-foreground fill-foreground" />
+                  <span className="text-xs font-medium text-foreground tracking-wide uppercase">AI-Powered Platform</span>
                 </div>
 
-                <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.1]">
-                  Transform Your
-                  <span className="block mt-2 bg-gradient-to-r from-primary via-primary to-blue-600 bg-clip-text text-transparent">
-                    Institute's Future
-                  </span>
+                <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-[0.9] tracking-tighter text-foreground">
+                  <span className="block text-foreground drop-shadow-sm">Transform Your</span>
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neutral-800 via-slate-700 to-neutral-500 drop-shadow-sm pb-2">Institute</span>
+                  <span className="block text-foreground">With NeuroNxt</span>
                 </h1>
 
-                <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed max-w-2xl">
-                  Empower students with AI tools, collaborative learning, and seamless communication in one modern platform.
+                <p className="text-lg text-muted-foreground max-w-lg leading-relaxed font-light">
+                  A comprehensive platform for educational institutions combining AI study tools, task management, real-time collaboration, and gamification.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <Link href="/pricing">
-                    <Button size="lg" className="h-14 px-8 text-lg shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all group">
-                      View Pricing Plans
-                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <Button size="lg" className="h-14 px-8 bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg shadow-primary/20 group font-semibold transition-all duration-300 hover:scale-105">
+                      View Pricing
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
-                  <Link href="#platform">
-                    <Button size="lg" variant="outline" className="h-14 px-8 text-lg">
-                      See How It Works
+                  <Link href="/auth/login">
+                    <Button size="lg" variant="outline" className="h-14 px-8 border-border bg-white/50 backdrop-blur-md hover:bg-white text-foreground font-medium shadow-sm transition-all duration-300 hover:border-primary/20 hover:scale-105 hover:shadow-md">
+                      Sign In
                     </Button>
                   </Link>
                 </div>
 
-                {/* Trust indicators */}
-                <div className="flex flex-wrap items-center gap-6 pt-6">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
-                    </div>
-                    Enterprise Security
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
-                    </div>
-                    24/7 Support
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-green-600" />
-                    </div>
-                    Easy Setup
-                  </div>
-                </div>
-              </div>
-
-              {/* Right visual - 5 columns with overlapping cards */}
-              <div className="lg:col-span-5 relative">
-                <div className="relative h-[500px]">
-                  {/* Main dashboard preview */}
-                  <div className="absolute top-0 right-0 w-full rounded-2xl border bg-card shadow-2xl overflow-hidden transform hover:scale-105 transition-transform duration-500">
-                    <img src="/neuronxt-dashboard-screenshot.png" alt="Dashboard" className="w-full" />
-                  </div>
-
-                  {/* Floating feature cards */}
-                  <div className="absolute -left-4 top-20 w-48 p-4 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
-                    <Brain className="w-8 h-8 mb-2 opacity-90" />
-                    <div className="font-semibold">AI Study Tools</div>
-                    <div className="text-xs opacity-90 mt-1">Powered by AI</div>
-                  </div>
-
-                  <div className="absolute -right-4 bottom-20 w-48 p-4 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-xl transform hover:-translate-y-2 transition-transform duration-300">
-                    <Trophy className="w-8 h-8 mb-2 opacity-90" />
-                    <div className="font-semibold">Gamification</div>
-                    <div className="text-xs opacity-90 mt-1">Boost Engagement</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Benefits - Bento Grid Layout */}
-        <section id="benefits" className="py-24 px-4 bg-muted/30">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1.5 bg-primary/10 text-primary border-primary/20">Why Choose NeuroNxt</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Built for Modern Education</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Everything your institute needs in one powerful platform
-              </p>
-            </div>
-
-            {/* Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 md:gap-6">
-              {/* Large card - spans 4 columns */}
-              <Card className="md:col-span-4 p-8 md:p-12 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 group">
-                <div className="flex flex-col md:flex-row items-start gap-8">
-                  <div className="w-20 h-20 bg-primary/20 rounded-3xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <BarChart3 className="w-10 h-10 text-primary" />
-                  </div>
-                  <div className="space-y-4">
-                    <h3 className="text-3xl font-bold">Boost Student Engagement</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      AI-powered tools, gamification with XP and leaderboards, and social features keep students motivated and actively learning. Track study streaks and celebrate achievements.
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Badge variant="secondary">AI Tools</Badge>
-                      <Badge variant="secondary">Leaderboards</Badge>
-                      <Badge variant="secondary">Social Learning</Badge>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Tall card - spans 2 columns, 2 rows */}
-              <Card className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-br from-green-500/5 to-green-500/10 border-2 border-green-500/20 hover:border-green-500/40 transition-all duration-300 group">
-                <div className="h-full flex flex-col justify-between">
+                {/* Stats */}
+                <div className="flex items-center gap-8 pt-4">
                   <div>
-                    <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <Clock className="w-8 h-8 text-green-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-4">Save Time & Resources</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Centralized management, automated notices, and digital notes reduce administrative workload significantly.
-                    </p>
+                    <div className="text-2xl font-bold text-foreground">10+</div>
+                    <div className="text-sm text-muted-foreground">AI Features</div>
                   </div>
-                  <div className="mt-8 pt-6 border-t">
-                    <div className="text-4xl font-bold text-green-600">60%</div>
-                    <div className="text-sm text-muted-foreground">Time Saved</div>
+                  <div className="h-8 w-px bg-border/50" />
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">99.9%</div>
+                    <div className="text-sm text-muted-foreground">Uptime</div>
+                  </div>
+                  <div className="h-8 w-px bg-border/50" />
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">24/7</div>
+                    <div className="text-sm text-muted-foreground">Support</div>
                   </div>
                 </div>
-              </Card>
+              </div>
 
-              {/* Wide card - spans 4 columns */}
-              <Card className="md:col-span-4 p-8 bg-gradient-to-br from-purple-500/5 to-purple-500/10 border-2 border-purple-500/20 hover:border-purple-500/40 transition-all duration-300 group">
-                <div className="flex items-start gap-6">
-                  <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Shield className="w-8 h-8 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold mb-3">Secure & Scalable</h3>
-                    <p className="text-muted-foreground leading-relaxed mb-4">
-                      Enterprise-grade security with role-based access control. Scales effortlessly from 100 to 10,000+ students.
-                    </p>
-                    <div className="grid grid-cols-3 gap-4 pt-4">
-                      <div className="text-center p-3 rounded-lg bg-background/50">
-                        <div className="text-2xl font-bold text-purple-600">256-bit</div>
-                        <div className="text-xs text-muted-foreground">Encryption</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-background/50">
-                        <div className="text-2xl font-bold text-purple-600">99.9%</div>
-                        <div className="text-xs text-muted-foreground">Uptime SLA</div>
-                      </div>
-                      <div className="text-center p-3 rounded-lg bg-background/50">
-                        <div className="text-2xl font-bold text-purple-600">GDPR</div>
-                        <div className="text-xs text-muted-foreground">Compliant</div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Right - Floating Cards */}
+              <div className="relative h-[600px] hidden lg:block perspective-1000" style={{ transform: `translateY(${scrollY * -0.05}px)` }}>
+                <div className="absolute top-0 right-0 w-80 h-48 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(-6deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <Brain className="h-12 w-12 text-muted-foreground/80 mb-4 drop-shadow-sm group-hover:text-primary transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">AI Study Assistant</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Automated summaries & quizzes</div>
                 </div>
-              </Card>
+
+                <div className="absolute top-32 right-20 w-72 h-44 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(3deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <BookOpen className="h-12 w-12 text-muted-foreground/80 mb-4 group-hover:text-primary transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">Smart Notes Hub</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Centralized study materials</div>
+                </div>
+
+                <div className="absolute top-72 right-10 w-80 h-48 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(-3deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <CheckSquare className="h-12 w-12 text-muted-foreground/80 mb-4 group-hover:text-primary transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">Task Management</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Track deadlines & projects</div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          {/* Scroll Indicator */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+            <span className="text-xs text-muted-foreground">Scroll to explore</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </div>
         </section>
 
-        {/* Platform Features - Asymmetric Grid */}
-        <section id="platform" className="py-24 px-4">
-          <div className="max-w-7xl mx-auto">
+        {/* Features - Masonry Grid */}
+        <section id="features" className="py-20 px-6 relative bg-card">
+          <div className="relative z-10 mx-auto max-w-7xl">
             <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1.5 bg-primary/10 text-primary border-primary/20">Complete Platform</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">Everything in One Place</h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                A comprehensive ecosystem for students, teachers, and administrators
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-colors cursor-default mb-4">
+                <Sparkles className="h-3 w-3 text-inherit" />
+                <span className="text-sm font-semibold tracking-wide">Student Features</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                Tools That Make Your
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-slate-800 to-neutral-500 drop-shadow-sm">Students Smarter</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Empower your students with cutting-edge tools designed to enhance learning outcomes and boost academic performance
               </p>
             </div>
 
-            {/* Student Features */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">
-              <div className="order-2 lg:order-1">
-                <div className="grid grid-cols-2 gap-4">
-                  <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-900">
-                    <BookOpen className="w-10 h-10 text-blue-600 mb-3" />
-                    <div className="font-bold">Notes Hub</div>
-                    <div className="text-xs text-muted-foreground mt-1">Digital Library</div>
-                  </Card>
-                  <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200 dark:border-purple-900">
-                    <Brain className="w-10 h-10 text-purple-600 mb-3" />
-                    <div className="font-bold">AI Tools</div>
-                    <div className="text-xs text-muted-foreground mt-1">Smart Assistant</div>
-                  </Card>
-                  <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10 border-green-200 dark:border-green-900">
-                    <CheckSquare className="w-10 h-10 text-green-600 mb-3" />
-                    <div className="font-bold">Tasks</div>
-                    <div className="text-xs text-muted-foreground mt-1">Stay Organized</div>
-                  </Card>
-                  <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/20 dark:to-yellow-900/10 border-yellow-200 dark:border-yellow-900">
-                    <Trophy className="w-10 h-10 text-yellow-600 mb-3" />
-                    <div className="font-bold">Leaderboard</div>
-                    <div className="text-xs text-muted-foreground mt-1">Compete & Win</div>
-                  </Card>
-                </div>
-              </div>
-
-              <div className="space-y-6 order-1 lg:order-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
-                  <Users className="w-4 h-4" /> For Students
-                </div>
-                <h3 className="text-3xl md:text-4xl font-bold">Powerful Tools for Learning</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Give your students everything they need to succeed—from AI-powered study tools to collaborative features.
-                </p>
-                <div className="space-y-3 pt-4">
-                  {[
-                    { icon: BookOpen, text: "Access notes organized by subject and semester" },
-                    { icon: Brain, text: "AI summarizer, quiz generator, and flashcards" },
-                    { icon: MessageCircle, text: "Chat with classmates and teachers" },
-                    { icon: Trophy, text: "Earn XP and track study streaks" }
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <item.icon className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-muted-foreground">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Admin Features */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-medium">
-                  <Building2 className="w-4 h-4" /> For Administrators
-                </div>
-                <h3 className="text-3xl md:text-4xl font-bold">Centralized Control</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  Manage your entire institute from one powerful dashboard. Simple, efficient, and secure.
-                </p>
-                <div className="space-y-3 pt-4">
-                  {[
-                    { icon: Users, text: "Add/remove students and teachers instantly" },
-                    { icon: Bell, text: "Send notices to specific branches or entire institute" },
-                    { icon: BookOpen, text: "Teachers upload notes, students access immediately" },
-                    { icon: Globe, text: "Multi-branch support with role-based access" }
-                  ].map((item, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                        <item.icon className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-muted-foreground">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/20 dark:to-indigo-900/10 border-indigo-200 dark:border-indigo-900">
-                  <Users className="w-10 h-10 text-indigo-600 mb-3" />
-                  <div className="font-bold">User Management</div>
-                  <div className="text-xs text-muted-foreground mt-1">Full Control</div>
-                </Card>
-                <Card className="p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/20 dark:to-orange-900/10 border-orange-200 dark:border-orange-900">
-                  <Bell className="w-10 h-10 text-orange-600 mb-3" />
-                  <div className="font-bold">Notices</div>
-                  <div className="text-xs text-muted-foreground mt-1">Instant Updates</div>
-                </Card>
-                <Card className="col-span-2 p-6 hover:shadow-lg transition-all hover:scale-105 duration-300 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-950/20 dark:to-teal-900/10 border-teal-200 dark:border-teal-900">
-                  <Globe className="w-10 h-10 text-teal-600 mb-3" />
-                  <div className="font-bold">Multi-Branch Support</div>
-                  <div className="text-xs text-muted-foreground mt-1">Manage multiple locations</div>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Grid */}
-        <section id="features" className="py-24 px-4 bg-muted/30">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <Badge className="mb-4 px-4 py-1.5 bg-primary/10 text-primary border-primary/20">Platform Features</Badge>
-              <h2 className="text-4xl md:text-5xl font-bold">Complete Feature Set</h2>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Features Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { icon: BookOpen, title: "Notes Hub", desc: "Centralized library for all study materials", gradient: "from-blue-500 to-blue-600" },
-                { icon: Brain, title: "AI Study Tools", desc: "Summarizer, quiz generator, flashcards", gradient: "from-purple-500 to-purple-600" },
-                { icon: CheckSquare, title: "Task Manager", desc: "Track assignments and deadlines", gradient: "from-green-500 to-green-600" },
-                { icon: MessageCircle, title: "Real-time Chat", desc: "Student-to-student and teacher messaging", gradient: "from-orange-500 to-orange-600" },
-                { icon: Trophy, title: "Leaderboards", desc: "Gamification with XP and study streaks", gradient: "from-yellow-500 to-yellow-600" },
-                { icon: Bell, title: "Notice Board", desc: "Instant announcements to students", gradient: "from-red-500 to-red-600" },
+                { icon: Brain, title: "AI Study Tools", desc: "Students get automated text summarization, quiz generation, flashcards, and YouTube summarizers", size: "large", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: BookOpen, title: "Notes Hub", desc: "Students upload, organize, and share study materials by subject", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: CheckSquare, title: "Task Manager", desc: "Students track assignments, projects, and exam deadlines", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: MessageCircle, title: "Real-time Chat", desc: "Students collaborate through messaging and study groups", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: Bookmark, title: "Saved Resources", desc: "Students bookmark and organize important notes, links, and study materials for quick access", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: Trophy, title: "Gamified Learning", desc: "Students earn XP points, climb leaderboards, maintain study streaks", size: "large", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: Bell, title: "Notices", desc: "Students receive important announcements from teachers and admins", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: Users, title: "Social Network", desc: "Students connect and network with peers across your institute", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: BarChart3, title: "Dashboard", desc: "Students track study streaks, upcoming tasks, and progress", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
+                { icon: Search, title: "Smart Search", desc: "Students quickly find notes, people, and resources", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" }
               ].map((feature, i) => (
-                <Card key={i} className="group p-6 hover:shadow-2xl transition-all hover:scale-[1.02] duration-300 border-2 hover:border-primary/30 overflow-hidden relative">
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
-                  <div className={`w-12 h-12 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="w-6 h-6 text-white" />
+                <Card
+                  key={i}
+                  className={`group relative overflow-hidden bg-background border-border/50 hover:border-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 cursor-default ${feature.size === 'large' ? 'md:col-span-2' : ''}`}
+                  style={{ minHeight: feature.size === 'large' ? '300px' : '240px' }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="relative p-8 h-full flex flex-col justify-between z-10">
+                    <div>
+                      <div className={`inline-flex h-16 w-16 items-center justify-center rounded-2xl ${feature.iconBg} mb-6 group-hover:scale-110 transition-transform shadow-sm border border-border/20`}>
+                        <feature.icon className={`h-8 w-8 ${feature.iconColor} transition-colors`} />
+                      </div>
+                      <h3 className="text-xl font-bold mb-3 text-foreground">{feature.title}</h3>
+                      <p className="text-muted-foreground">{feature.desc}</p>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground">{feature.desc}</p>
                 </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="relative py-24 px-4 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-blue-600" />
-          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        {/* Platform Section */}
+        <section id="platform" className="py-20 px-6 relative overflow-hidden bg-secondary/30">
+          <div className="absolute inset-0">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-primary/5 rounded-full blur-[150px]" />
+          </div>
 
-          <div className="max-w-4xl mx-auto text-center relative z-10 space-y-8 text-white">
-            <h2 className="text-4xl md:text-5xl font-bold">Ready to Transform Your Institute?</h2>
-            <p className="text-xl opacity-90 max-w-2xl mx-auto">
-              Transform your institute with modern learning technology. See how NeuroNxt can help.
+          <div className="relative z-10 mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                Built For
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-slate-800 to-neutral-500 drop-shadow-sm">Every Stakeholder</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Tailored experiences for students, teachers, and administrators
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* Students */}
+              <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative space-y-4">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                    <Users className="h-7 w-7 text-current" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">For Students</h3>
+                  <p className="text-muted-foreground text-sm">Everything to excel in studies</p>
+                  <div className="space-y-2 pt-2">
+                    {["Access digital notes", "AI study tools", "Track assignments", "Chat with peers", "Earn XP & compete", "Social networking"].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-slate-500/50" />
+                        <span className="text-sm text-muted-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Teachers */}
+              <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative space-y-4">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                    <UserPlus className="h-7 w-7 text-current" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">For Teachers</h3>
+                  <p className="text-muted-foreground text-sm">Tools to engage students</p>
+                  <div className="space-y-2 pt-2">
+                    {["Upload study materials", "Send notices", "Chat with students", "Share resources"].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-slate-500/50" />
+                        <span className="text-sm text-muted-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Admins */}
+              <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="relative space-y-4">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                    <Building2 className="h-7 w-7 text-current" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground">For Institutes</h3>
+                  <p className="text-muted-foreground text-sm">Administer & analyze</p>
+                  <div className="space-y-2 pt-2">
+                    {["Student verification", "Send specific notices", "User management", "System analytics"].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-slate-500/50" />
+                        <span className="text-sm text-muted-foreground">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section id="join" className="py-20 px-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background" />
+          <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-5" />
+
+          <div className="relative z-10 mx-auto max-w-4xl text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-colors cursor-default">
+              <Sparkles className="h-4 w-4 text-inherit" />
+              <span className="text-sm font-semibold tracking-wide">Start Your Journey Today</span>
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-black leading-tight text-foreground">
+              <span className="block drop-shadow-sm">Ready to Transform</span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-neutral-900 via-slate-800 to-neutral-500 drop-shadow-sm">
+                Your Institution?
+              </span>
+            </h2>
+
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto drop-shadow-sm">
+              Join forward-thinking institutes using NeuroNxt to revolutionize education and boost student success
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
               <Link href="/pricing">
-                <Button size="lg" variant="secondary" className="h-14 px-10 text-lg shadow-2xl hover:scale-105 transition-transform">
-                  View Pricing Plans
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                <Button size="lg" className="h-16 px-12 bg-primary text-primary-foreground hover:bg-primary/90 border-0 shadow-lg shadow-primary/20 group text-lg font-semibold transition-all duration-300 hover:scale-105">
+                  View Pricing
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
             </div>
-            <p className="text-sm opacity-75 pt-4">
-              Trusted by leading educational institutions • Enterprise support included
-            </p>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="py-12 px-4 border-t">
-          <div className="max-w-7xl mx-auto">
+        <footer className="py-12 px-6 border-t border-border bg-background">
+          <div className="mx-auto max-w-7xl">
             <div className="grid md:grid-cols-4 gap-8 mb-8">
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                    <Brain className="h-4 w-4 text-primary-foreground" />
                   </div>
-                  <span className="text-lg font-bold">NeuroNxt</span>
+                  <span className="text-lg font-bold text-foreground tracking-tight">NeuroNxt</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  The complete learning platform for modern educational institutions.
+                  Transforming educational institutions with AI-powered learning platforms.
                 </p>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4">Platform</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Platform</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
                   <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
                   <li><Link href="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">Security</a></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4">Company</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">Support</a></li>
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Company</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">About</button></li>
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Contact</button></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-semibold mb-4">Legal</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><a href="#" className="hover:text-primary transition-colors">Privacy</a></li>
-                  <li><a href="#" className="hover:text-primary transition-colors">Terms</a></li>
+                <h4 className="font-semibold mb-4 text-sm text-foreground">Legal</h4>
+                <ul className="space-y-3 text-sm text-muted-foreground">
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Privacy</button></li>
+                  <li><button type="button" className="hover:text-primary transition-colors cursor-default">Terms</button></li>
                 </ul>
               </div>
             </div>
-            <div className="pt-8 border-t text-center text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} NeuroNxt. All rights reserved.
+
+            <div className="pt-8 border-t border-border/50 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+              <span>&copy; {new Date().getFullYear()} NeuroNxt. All rights reserved.</span>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>System Online</span>
+              </div>
             </div>
           </div>
         </footer>
@@ -517,7 +431,7 @@ export default function HomePage() {
             isOpen={showOnboarding}
             userId={user.id}
             currentFullName={user.user_metadata?.full_name || ""}
-            onComplete={handleOnboardingComplete}
+            onComplete={() => setShowOnboarding(false)}
           />
         )}
       </main>
