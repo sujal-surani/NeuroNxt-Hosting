@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { TopNavbar } from "@/components/top-navbar"
@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client"
 import { OnboardingModal } from "@/components/onboarding-modal"
 import { TaskDialog } from "@/components/task-dialog"
 import { Task, AddTaskDialog } from "@/components/add-task-dialog"
+import { QuestionOfTheDay } from "@/components/question-of-the-day"
 import {
   BookOpen,
   Brain,
@@ -41,6 +42,8 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([])
+
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -565,24 +568,14 @@ export default function Dashboard() {
 
               {/* Recent Activity & Quick Actions */}
               <div className="space-y-6">
-                {/* Recent Activity */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Recent Activity</CardTitle>
-                    <CardDescription className="text-xs">Your latest study sessions and achievements</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-center p-4 text-muted-foreground text-sm">
-                      No recent activity
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Question of the Day */}
+                <QuestionOfTheDay />
 
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="pb-0">
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="-mt-2 pt-0 space-y-3 ">
                     <Button
                       className="w-full justify-start bg-transparent"
                       variant="outline"
