@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Users, MessageCircle, Search, UserPlus, UserCheck, CheckCircle, XCircle, Loader2, Filter } from "lucide-react"
+import { Users, MessageCircle, Search, UserPlus, UserCheck, CheckCircle, XCircle, Loader2, Filter, Clock } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { StudentProfilePopup } from "@/components/student-profile-popup"
 import { formatBranchName } from "@/lib/utils"
+import { sendNotification } from "@/app/actions/notifications"
 
 interface SocialUser {
   id: string
@@ -355,11 +356,29 @@ const SocialPage = () => {
 
       if (error) throw error
 
-      setSentRequests(prev => [...prev, data])
+      // Send notification to recipient
+      const response = await sendNotification({
+        user_id: person.id,
+        type: 'info',
+        category: 'social',
+        title: 'New Friend Request',
+        message: `${user.user_metadata.full_name || 'Someone'} sent you a friend request.`,
+        link: '/social',
+        is_read: false
+      })
+
+      if (!response.success) {
+        console.error('Error sending notification:', response.error)
+      }
+
+      setSentRequests(prev => {
+        if (prev.some(req => req.id === data.id)) return prev
+        return [...prev, data]
+      })
       toast.success("Connection request sent!")
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending request:', error)
-      toast.error("Failed to send request")
+      toast.error(`Failed to send request: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -374,12 +393,47 @@ const SocialPage = () => {
 
       if (error) throw error
 
+      // Get requester details
+      const requesterName = data.requester?.full_name || 'A student'
+      const recipientName = data.recipient?.full_name || 'A student'
+
+      // Notification for Requester (person who sent the request)
+      const notif1 = {
+        user_id: data.requester_id,
+        type: 'success',
+        category: 'social',
+        title: 'Request Accepted',
+        message: `${recipientName} accepted your friend request. You can now chat!`,
+        link: `/chat?id=${data.recipient_id}`,
+        is_read: false
+      }
+
+      // Notification for Recipient (person who accepted, i.e., current user)
+      const notif2 = {
+        user_id: data.recipient_id,
+        type: 'success',
+        category: 'social',
+        title: 'Connection Established',
+        message: `You are now connected with ${requesterName}. You can now chat personally.`,
+        link: `/chat?id=${data.requester_id}`,
+        is_read: false
+      }
+
+      const response = await sendNotification([notif1, notif2])
+
+      if (!response.success) {
+        console.error('Error sending notifications:', response.error)
+      }
+
       setFriendRequests(prev => prev.filter(req => req.id !== requestId))
-      setConnections(prev => [...prev, data])
+      setConnections(prev => {
+        if (prev.some(c => c.id === data.id)) return prev
+        return [...prev, data]
+      })
       toast.success("Request accepted!")
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting request:', error)
-      toast.error("Failed to accept request")
+      toast.error(`Failed to accept: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -831,7 +885,7 @@ const SocialPage = () => {
                           <p className="text-muted-foreground">You're all caught up! No new friend requests at the moment.</p>
                         </div>
                       ) : (
-                        <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
+                        <div className="max-h-[320px] overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
                           style={{
                             scrollbarWidth: "thin",
                             scrollbarColor: "rgb(203 213 225) transparent",
@@ -854,13 +908,67 @@ const SocialPage = () => {
                                       </div>
                                     </div>
                                     <div className="flex gap-2">
-                                      <Button size="icon" variant="outline" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => acceptFriendRequest(r.id)}>
-                                        <CheckCircle className="w-4 h-4" />
+                                      <Button size="sm" className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white shadow-sm" onClick={() => acceptFriendRequest(r.id)}>
+                                        Accept
                                       </Button>
-                                      <Button size="icon" variant="outline" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => denyFriendRequest(r.id)}>
-                                        <XCircle className="w-4 h-4" />
+                                      <Button size="sm" variant="outline" className="h-8 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300" onClick={() => denyFriendRequest(r.id)}>
+                                        Deny
                                       </Button>
                                     </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Sent Requests - Right Side */}
+                  <Card>
+                    <CardHeader className="py-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center text-xl">
+                          <Clock className="w-5 h-5 mr-2" />
+                          Sent Requests
+                        </CardTitle>
+                        {sentRequests.length > 0 && <Badge variant="secondary" className="text-sm border-transparent bg-primary/10 text-primary hover:bg-primary/20">{sentRequests.length} pending</Badge>}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {sentRequests.length === 0 ? (
+                        <div className="text-center py-6">
+                          <UserCheck className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                          <h3 className="text-lg font-medium mb-1">No sent requests</h3>
+                          <p className="text-muted-foreground">You haven't sent any pending connection requests.</p>
+                        </div>
+                      ) : (
+                        <div className="max-h-[320px] overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
+                          style={{
+                            scrollbarWidth: "thin",
+                            scrollbarColor: "rgb(203 213 225) transparent",
+                          }}>
+                          <div className="space-y-3">
+                            {sentRequests.map((r) => (
+                              <Card key={r.id} className="hover:shadow-sm transition-shadow">
+                                <CardContent className="px-3 py-2">
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="w-8 h-8 flex-shrink-0">
+                                      <AvatarImage src={r.recipient?.avatar} alt={r.recipient?.name} />
+                                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                                        {getInitials(r.recipient?.name || '??')}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-base truncate" title={r.recipient?.name}>{r.recipient?.name}</div>
+                                      <div className="text-sm text-muted-foreground truncate" title={`${r.recipient?.branch} • ${r.recipient?.semester}`}>
+                                        {r.recipient?.branch} • {r.recipient?.semester}
+                                      </div>
+                                    </div>
+                                    <Badge variant="outline" className="text-xs h-7 px-2 text-muted-foreground border-dashed">
+                                      Pending
+                                    </Badge>
                                   </div>
                                 </CardContent>
                               </Card>
