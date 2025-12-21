@@ -1,0 +1,132 @@
+[
+    {
+        "id": "q1",
+        "date": "2025-12-20",
+        "question": "What does 'HTTP' stand for?",
+        "options": [
+            "HyperText Transfer Protocol",
+            "HyperText Transmission Process",
+            "High Transmission Text Protocol",
+            "Host Text Transfer Protocol"
+        ],
+        "correct_index": 0,
+        "fact": "HTTP is the foundation of data communication for the World Wide Web."
+    },
+    {
+        "id": "q2",
+        "date": "2025-12-21",
+        "question": "Which data structure operates on a LIFO (Last In, First Out) principle?",
+        "options": [
+            "Queue",
+            "Linked List",
+            "Stack",
+            "Tree"
+        ],
+        "correct_index": 2,
+        "fact": "Stacks are used in function calls (call stack) and undo mechanisms."
+    },
+    {
+        "id": "q3",
+        "date": null,
+        "question": "What is the time complexity of looking up a value in a Hash Map (average case)?",
+        "options": [
+            "O(n)",
+            "O(log n)",
+            "O(1)",
+            "O(n log n)"
+        ],
+        "correct_index": 2,
+        "fact": "Hash Maps provide constant time lookups on average using key hashing."
+    },
+    {
+        "id": "q4",
+        "date": null,
+        "question": "Which sort algorithm is generally considered the fastest for large datasets?",
+        "options": [
+            "Bubble Sort",
+            "Insertion Sort",
+            "Merge Sort",
+            "Quick Sort"
+        ],
+        "correct_index": 3,
+        "fact": "Quick Sort is often faster in practice, though Merge Sort is more stable."
+    },
+    {
+        "id": "q5",
+        "date": null,
+        "question": "What does SQL stand for?",
+        "options": [
+            "Structured Question Language",
+            "Structured Query Language",
+            "Simple Query Language",
+            "System Query Language"
+        ],
+        "correct_index": 1,
+        "fact": "SQL is the standard language for relational database management systems."
+    },
+    {
+        "id": "q6",
+        "date": null,
+        "question": "What is the primary function of DNS?",
+        "options": [
+            "To encrypt data",
+            "To transfer files",
+            "To map domain names to IP addresses",
+            "To route packets"
+        ],
+        "correct_index": 2,
+        "fact": "DNS is like the phonebook of the internet, translating names to numbers."
+    },
+    {
+        "id": "q7",
+        "date": null,
+        "question": "Which logic gate returns true only if both inputs are true?",
+        "options": [
+            "OR",
+            "XOR",
+            "AND",
+            "NAND"
+        ],
+        "correct_index": 2,
+        "fact": "The AND gate is fundamental to digital logic circuits."
+    },
+    {
+        "id": "q8",
+        "date": null,
+        "question": "What does CSS stand for?",
+        "options": [
+            "Computer Style Sheets",
+            "Creative Style Sheets",
+            "Cascading Style Sheets",
+            "Colorful Style Sheets"
+        ],
+        "correct_index": 2,
+        "fact": "CSS describes how HTML elements are to be displayed on screen."
+    },
+    {
+        "id": "q9",
+        "date": null,
+        "question": "In Python, which keyword is used to define a function?",
+        "options": [
+            "func",
+            "def",
+            "function",
+            "define"
+        ],
+        "correct_index": 1,
+        "fact": "'def' comes from 'define'. Python emphasizes readability."
+    },
+    {
+        "id": "q10",
+        "date": null,
+        "question": "What is the binary representation of the decimal number 10?",
+        "options": [
+            "1010",
+            "1001",
+            "1100",
+            "1110"
+        ],
+        "correct_index": 0,
+        "fact": "Binary uses base-2. 10 = 8(1) + 4(0) + 2(1) + 1(0)."
+    }
+]

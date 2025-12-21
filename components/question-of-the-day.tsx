@@ -70,7 +70,7 @@ const questions = [
     }
 ]
 
-export function QuestionOfTheDay() {
+export function QuestionOfTheDay({ userId }: { userId: string }) {
     const [mounted, setMounted] = useState(false)
     const [question, setQuestion] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -85,11 +85,13 @@ export function QuestionOfTheDay() {
 
         const fetchQuestion = async () => {
             try {
-                // Check if we already have today's Q cached in local storage to avoid API hit
+                // Check if we already have today's Q cached in local storage (SKIP IN DEV MODE)
+                const isDev = process.env.NODE_ENV === 'development'
                 const todayStr = new Date().toISOString().split('T')[0]
-                const cachedQ = localStorage.getItem("qotd_data")
+                const cacheKey = `qotd_data_${userId}`
+                const cachedQ = localStorage.getItem(cacheKey)
 
-                if (cachedQ) {
+                if (cachedQ && !isDev) {
                     const parsed = JSON.parse(cachedQ)
                     if (parsed.date === todayStr) {
                         setQuestion(parsed)
@@ -99,14 +101,14 @@ export function QuestionOfTheDay() {
                     }
                 }
 
-                // Fetch new from API
-                const res = await fetch('/api/qotd')
+                // Fetch new from API with userId
+                const res = await fetch(`/api/qotd?userId=${userId}`)
                 const data = await res.json()
 
                 if (data && !data.error) {
                     setQuestion(data)
                     // Cache it
-                    localStorage.setItem("qotd_data", JSON.stringify(data))
+                    localStorage.setItem(cacheKey, JSON.stringify(data))
                     restoreAnswerState(data)
                 }
             } catch (error) {
@@ -116,15 +118,16 @@ export function QuestionOfTheDay() {
             }
         }
 
-        fetchQuestion()
-    }, [])
+        if (userId) fetchQuestion()
+    }, [userId])
 
     const restoreAnswerState = (currentQ: any) => {
         // Check if user answered this specific question
-        const savedState = localStorage.getItem("qotd_status")
+        const statusKey = `qotd_status_${userId}`
+        const savedState = localStorage.getItem(statusKey)
         if (savedState) {
             const parsed = JSON.parse(savedState)
-            // Use ID or date to verify match. Since we use date for daily, date is good.
+            // Use ID or date to verify match.
             if (parsed.date === currentQ.date) {
                 setSelectedOption(parsed.selected)
                 setIsAnswered(true)
@@ -143,7 +146,8 @@ export function QuestionOfTheDay() {
 
         // Save answer state
         const todayStr = new Date().toISOString().split('T')[0]
-        localStorage.setItem("qotd_status", JSON.stringify({
+        const statusKey = `qotd_status_${userId}`
+        localStorage.setItem(statusKey, JSON.stringify({
             date: todayStr,
             selected: index
         }))
@@ -178,8 +182,8 @@ export function QuestionOfTheDay() {
                 </div>
                 <CardDescription className="text-xs">Test your tech knowledge!</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 px-3 pb-3 flex-1 flex flex-col overflow-hidden">
-                <div className="font-medium text-sm min-h-[40px]">
+            <CardContent className="space-y-2 px-3 pb-3 pt-0 -mt-4 flex-1 flex flex-col overflow-hidden">
+                <div className="font-medium text-sm min-h-[40px] mb-5">
                     {question.question}
                 </div>
 

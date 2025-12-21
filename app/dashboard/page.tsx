@@ -60,7 +60,7 @@ export default function Dashboard() {
           .from('profiles')
           .select('is_onboarded')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (profile && !profile.is_onboarded) {
           setShowOnboarding(true)
@@ -87,7 +87,7 @@ export default function Dashboard() {
           .from('profiles')
           .select('branch, semester, is_onboarded, study_streak')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         console.log("Dashboard Profile Fetch:", profile)
 
@@ -98,6 +98,8 @@ export default function Dashboard() {
           setUserBranch(profile.branch || "")
           setUserSemester(profile.semester || "")
           setStudyStreak(profile.study_streak || 0)
+        } else {
+          // Handle case where profile doesn't exist yet (shouldn't happen with triggers, but safe fallback)
         }
 
         // Trigger Streak Update
@@ -108,7 +110,7 @@ export default function Dashboard() {
           .from('profiles')
           .select('study_streak')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (updatedProfile) {
           setStudyStreak(updatedProfile.study_streak || 0)
@@ -569,7 +571,7 @@ export default function Dashboard() {
               {/* Recent Activity & Quick Actions */}
               <div className="space-y-6">
                 {/* Question of the Day */}
-                <QuestionOfTheDay />
+                {user && <QuestionOfTheDay userId={user.id} />}
 
                 <Card>
                   <CardHeader className="pb-0">

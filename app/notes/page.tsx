@@ -50,6 +50,7 @@ import {
   Upload,
   UploadCloud,
   File,
+  Trash2,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -64,6 +65,7 @@ interface Note {
   branch: string
   semester: number
   author: string
+  authorId: string
   authorAvatar: string
   uploadDate: string
   views: number
@@ -241,6 +243,7 @@ export default function NotesPage() {
       branch: item.branch,
       semester: item.semester,
       author: item.author_name || "Unknown",
+      authorId: item.author_id,
       authorAvatar: item.author_avatar || "U",
       uploadDate: new Date(item.created_at).toLocaleDateString(),
       views: item.views,
@@ -732,6 +735,33 @@ export default function NotesPage() {
     }
   }
 
+  const handleDeleteNote = async (noteId: number) => {
+    if (!confirm("Are you sure you want to delete this note? This action cannot be undone.")) return
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId)
+
+      if (error) {
+        console.error('Error deleting note:', error)
+        alert("Failed to delete note")
+      } else {
+        // Remove from local state
+        setNotes(prev => prev.filter(n => n.id !== noteId))
+        if (selectedNote?.id === noteId) {
+          setIsViewerOpen(false)
+          setSelectedNote(null)
+        }
+        // Also remove from interaction sets if needed, but not strictly required as UI updates from `notes`
+      }
+    } catch (e) {
+      console.error('Error deleting note:', e)
+      alert("An unexpected error occurred")
+    }
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -1155,6 +1185,20 @@ export default function NotesPage() {
                               <Circle className="h-4 w-4" />
                             )}
                           </Button>
+                          {userId === note.authorId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteNote(note.id)
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 hover:bg-red-500/10"
+                              aria-label="Delete Note"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -1369,6 +1413,11 @@ export default function NotesPage() {
                     <Button variant="outline" size="sm" onClick={() => selectedNote && copyNote(selectedNote)} aria-label="Copy">
                       <Copy className="w-4 h-4" />
                     </Button>
+                    {selectedNote && userId === selectedNote.authorId && (
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteNote(selectedNote.id)} aria-label="Delete" className="text-red-500 border-red-200 hover:bg-red-500/10 hover:text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => setIsViewerOpen(false)} aria-label="Close" autoFocus>
                       <X className="w-4 h-4" />
                     </Button>
