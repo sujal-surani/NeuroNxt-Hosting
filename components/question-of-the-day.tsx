@@ -72,65 +72,103 @@ const questions = [
 
 export function QuestionOfTheDay() {
     const [mounted, setMounted] = useState(false)
+    const [question, setQuestion] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
 
-    // Use a predictable pseudo-random index based on the date
-    // This ensures all users see the same question on the same day
-    const getDailyQuestionIndex = () => {
-        const today = new Date()
-        const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24)
-        return dayOfYear % questions.length
-    }
-
-    const [currentQIndex, setCurrentQIndex] = useState(0)
+    // Answer State
     const [selectedOption, setSelectedOption] = useState<number | null>(null)
     const [isAnswered, setIsAnswered] = useState(false)
     const [isCorrect, setIsCorrect] = useState(false)
 
     useEffect(() => {
         setMounted(true)
-        const index = getDailyQuestionIndex()
-        setCurrentQIndex(index)
 
-        // Check localStorage if user already answered today
-        const todayStr = new Date().toISOString().split('T')[0]
-        const saved = localStorage.getItem("qotd_status")
+        const fetchQuestion = async () => {
+            try {
+                // Check if we already have today's Q cached in local storage to avoid API hit
+                const todayStr = new Date().toISOString().split('T')[0]
+                const cachedQ = localStorage.getItem("qotd_data")
 
-        if (saved) {
-            const parsed = JSON.parse(saved)
-            if (parsed.date === todayStr && parsed.index === index) {
-                setSelectedOption(parsed.selected)
-                setIsAnswered(true)
-                setIsCorrect(parsed.selected === questions[index].correct)
+                if (cachedQ) {
+                    const parsed = JSON.parse(cachedQ)
+                    if (parsed.date === todayStr) {
+                        setQuestion(parsed)
+                        setLoading(false)
+                        restoreAnswerState(parsed)
+                        return
+                    }
+                }
+
+                // Fetch new from API
+                const res = await fetch('/api/qotd')
+                const data = await res.json()
+
+                if (data && !data.error) {
+                    setQuestion(data)
+                    // Cache it
+                    localStorage.setItem("qotd_data", JSON.stringify(data))
+                    restoreAnswerState(data)
+                }
+            } catch (error) {
+                console.error("Failed to fetch QOTD:", error)
+            } finally {
+                setLoading(false)
             }
         }
+
+        fetchQuestion()
     }, [])
 
-    const handleOptionClick = (index: number) => {
-        if (isAnswered) return
+    const restoreAnswerState = (currentQ: any) => {
+        // Check if user answered this specific question
+        const savedState = localStorage.getItem("qotd_status")
+        if (savedState) {
+            const parsed = JSON.parse(savedState)
+            // Use ID or date to verify match. Since we use date for daily, date is good.
+            if (parsed.date === currentQ.date) {
+                setSelectedOption(parsed.selected)
+                setIsAnswered(true)
+                setIsCorrect(parsed.selected === currentQ.correct_index)
+            }
+        }
+    }
 
-        const correct = index === questions[currentQIndex].correct
+    const handleOptionClick = (index: number) => {
+        if (isAnswered || !question) return
+
+        const correct = index === question.correct_index
         setSelectedOption(index)
         setIsAnswered(true)
         setIsCorrect(correct)
 
-        // Save to local storage
+        // Save answer state
         const todayStr = new Date().toISOString().split('T')[0]
         localStorage.setItem("qotd_status", JSON.stringify({
             date: todayStr,
-            index: currentQIndex,
             selected: index
         }))
     }
 
     if (!mounted) return null
 
-    const question = questions[currentQIndex]
+    if (loading) {
+        return (
+            <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5 h-[344px] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 animate-pulse">
+                    <Brain className="w-8 h-8 text-primary/40" />
+                    <span className="text-xs text-muted-foreground">Loading Question...</span>
+                </div>
+            </Card>
+        )
+    }
+
+    if (!question) return null
 
     return (
         <Card
             className="border-primary/20 bg-gradient-to-br from-card to-primary/5 overflow-hidden h-[344px] flex flex-col"
         >
-            <CardHeader className="pb-2 pt-4 px-3 flex-shrink-0">
+            <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <Brain className="w-4 h-4 text-primary" />
@@ -147,7 +185,7 @@ export function QuestionOfTheDay() {
 
                 {!isAnswered ? (
                     <div className="grid grid-cols-1 gap-2">
-                        {question.options.map((option, idx) => (
+                        {question.options.map((option: string, idx: number) => (
                             <Button
                                 key={idx}
                                 variant={"outline"}
@@ -171,7 +209,7 @@ export function QuestionOfTheDay() {
                             </div>
                             <div className="text-xs opacity-90">
                                 <span className="font-semibold">Answer: </span>
-                                {question.options[question.correct]}
+                                {question.options[question.correct_index]}
                             </div>
                         </div>
 

@@ -160,43 +160,78 @@ export default function HomePage() {
                 {/* Stats */}
                 <div className="flex items-center gap-8 pt-4">
                   <div>
-                    <div className="text-2xl font-bold text-foreground">10+</div>
-                    <div className="text-sm text-muted-foreground">AI Features</div>
+                    <div className="text-2xl font-bold text-foreground">Digital</div>
+                    <div className="text-sm text-muted-foreground">Campus</div>
                   </div>
                   <div className="h-8 w-px bg-border/50" />
                   <div>
-                    <div className="text-2xl font-bold text-foreground">99.9%</div>
-                    <div className="text-sm text-muted-foreground">Uptime</div>
+                    <div className="text-2xl font-bold text-foreground">Future</div>
+                    <div className="text-sm text-muted-foreground">Ready</div>
                   </div>
                   <div className="h-8 w-px bg-border/50" />
                   <div>
-                    <div className="text-2xl font-bold text-foreground">24/7</div>
-                    <div className="text-sm text-muted-foreground">Support</div>
+                    <div className="text-2xl font-bold text-foreground">Smart</div>
+                    <div className="text-sm text-muted-foreground">Admin</div>
+                  </div>
+                  <div className="h-8 w-px bg-border/50" />
+                  <div>
+                    <div className="text-2xl font-bold text-foreground">Next-Gen</div>
+                    <div className="text-sm text-muted-foreground">Tools</div>
                   </div>
                 </div>
               </div>
 
               {/* Right - Floating Cards */}
-              <div className="relative h-[600px] hidden lg:block perspective-1000" style={{ transform: `translateY(${scrollY * -0.05}px)` }}>
-                <div className="absolute top-0 right-0 w-80 h-48 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(-6deg)' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                  <Brain className="h-12 w-12 text-muted-foreground/80 mb-4 drop-shadow-sm group-hover:text-primary transition-colors" />
-                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">AI Study Assistant</div>
-                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Automated summaries & quizzes</div>
+              {/* Right - Floating Cards */}
+              <div className="relative h-[600px] hidden lg:block perspective-1000 w-full" style={{ transform: `translateY(${scrollY * -0.05}px)` }}>
+
+                {/* Apps Grid Layout */}
+
+                {/* Top Right - Analytics (Center Anchor) */}
+                <div className="absolute top-4 right-20 w-80 h-48 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-violet-500/30 group z-30" style={{ transform: 'rotate(-3deg)' }}>
+                  <div className="absolute top-6 right-6 flex items-center gap-2">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Live</span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <BarChart3 className="h-12 w-12 text-violet-500/80 mb-4 drop-shadow-sm group-hover:text-violet-500 transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-violet-500 transition-colors">Real-time Analytics</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Monitor academic performance & engagement</div>
                 </div>
 
-                <div className="absolute top-32 right-20 w-72 h-44 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(3deg)' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                  <BookOpen className="h-12 w-12 text-muted-foreground/80 mb-4 group-hover:text-primary transition-colors" />
-                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">Smart Notes Hub</div>
-                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Centralized study materials</div>
+                {/* Middle Right - Instant Alerts - Pushed Far Right/Up */}
+                <div className="absolute top-48 -right-16 w-72 h-44 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-rose-500/30 group z-20" style={{ transform: 'rotate(5deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <Bell className="h-12 w-12 text-rose-500/80 mb-4 group-hover:text-rose-500 transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-rose-500 transition-colors">Instant Alerts</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Broadcast campus-wide notices</div>
                 </div>
 
-                <div className="absolute top-72 right-10 w-80 h-48 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-primary/50 group" style={{ transform: 'rotate(-3deg)' }}>
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
-                  <CheckSquare className="h-12 w-12 text-muted-foreground/80 mb-4 group-hover:text-primary transition-colors" />
-                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-primary transition-colors">Task Management</div>
-                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Track deadlines & projects</div>
+                {/* Middle Left - Administration - Pushed Far Left */}
+                <div className="absolute top-64 -left-12 w-72 h-44 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-blue-500/30 group z-20" style={{ transform: 'rotate(4deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <Building2 className="h-12 w-12 text-blue-500/80 mb-4 group-hover:text-blue-500 transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-blue-500 transition-colors">Campus Admin</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Centralized control for branches</div>
+                </div>
+
+                {/* Bottom Center - Success - Anchoring Center */}
+                <div className="absolute bottom-6 right-36 w-72 h-44 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-amber-500/30 group z-20" style={{ transform: 'rotate(-2deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <Trophy className="h-12 w-12 text-amber-500/80 mb-4 group-hover:text-amber-500 transition-colors" />
+                  <div className="text-xl font-bold mb-2 text-foreground group-hover:text-amber-500 transition-colors">Student Success</div>
+                  <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Boost grades with AI tools</div>
+                </div>
+
+                {/* Top Left - Security - Pushed Top Left */}
+                <div className="absolute -top-12 -left-4 w-64 h-40 bg-card/60 backdrop-blur-2xl rounded-2xl border border-border/50 p-6 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] hover:scale-105 transition-all duration-500 cursor-default hover:border-emerald-500/30 group z-10" style={{ transform: 'rotate(-8deg)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+                  <Shield className="h-10 w-10 text-emerald-500/80 mb-3 group-hover:text-emerald-500 transition-colors" />
+                  <div className="text-lg font-bold mb-1 text-foreground group-hover:text-emerald-500 transition-colors">Enterprise Security</div>
+                  <div className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">Role-based access & privacy</div>
                 </div>
               </div>
             </div>
@@ -229,16 +264,16 @@ export default function HomePage() {
             {/* Features Grid */}
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[
-                { icon: Brain, title: "AI Study Tools", desc: "Students get automated text summarization, quiz generation, flashcards, and YouTube summarizers", size: "large", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: BookOpen, title: "Notes Hub", desc: "Students upload, organize, and share study materials by subject", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: CheckSquare, title: "Task Manager", desc: "Students track assignments, projects, and exam deadlines", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: MessageCircle, title: "Real-time Chat", desc: "Students collaborate through messaging and study groups", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: Bookmark, title: "Saved Resources", desc: "Students bookmark and organize important notes, links, and study materials for quick access", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: Trophy, title: "Gamified Learning", desc: "Students earn XP points, climb leaderboards, maintain study streaks", size: "large", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: Bell, title: "Notices", desc: "Students receive important announcements from teachers and admins", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: Users, title: "Social Network", desc: "Students connect and network with peers across your institute", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: BarChart3, title: "Dashboard", desc: "Students track study streaks, upcoming tasks, and progress", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" },
-                { icon: Search, title: "Smart Search", desc: "Students quickly find notes, people, and resources", size: "normal", iconBg: "bg-secondary", iconColor: "text-muted-foreground" }
+                { icon: Brain, title: "AI Study Tools", desc: "Students get automated text summarization, quiz generation, flashcards, and YouTube summarizers", size: "large", iconBg: "bg-violet-500/10", iconColor: "text-violet-500" },
+                { icon: BookOpen, title: "Notes Hub", desc: "Students upload, organize, and share study materials by subject", size: "normal", iconBg: "bg-amber-500/10", iconColor: "text-amber-500" },
+                { icon: CheckSquare, title: "Task Manager", desc: "Students track assignments, projects, and exam deadlines", size: "normal", iconBg: "bg-emerald-500/10", iconColor: "text-emerald-500" },
+                { icon: MessageCircle, title: "Real-time Chat", desc: "Students collaborate through messaging and study groups", size: "normal", iconBg: "bg-blue-500/10", iconColor: "text-blue-500" },
+                { icon: Bookmark, title: "Saved Resources", desc: "Students bookmark and organize important notes, links, and study materials for quick access", size: "normal", iconBg: "bg-rose-500/10", iconColor: "text-rose-500" },
+                { icon: Trophy, title: "Gamified Learning", desc: "Students earn XP points, climb leaderboards, maintain study streaks", size: "large", iconBg: "bg-yellow-500/10", iconColor: "text-yellow-500" },
+                { icon: Bell, title: "Notices", desc: "Students receive important announcements from teachers and admins", size: "normal", iconBg: "bg-orange-500/10", iconColor: "text-orange-500" },
+                { icon: Users, title: "Social Network", desc: "Students connect and network with peers across your institute", size: "normal", iconBg: "bg-cyan-500/10", iconColor: "text-cyan-500" },
+                { icon: BarChart3, title: "Dashboard", desc: "Students track study streaks, upcoming tasks, and progress", size: "normal", iconBg: "bg-indigo-500/10", iconColor: "text-indigo-500" },
+                { icon: Search, title: "Smart Search", desc: "Students quickly find notes, people, and resources", size: "normal", iconBg: "bg-slate-500/10", iconColor: "text-slate-500" }
               ].map((feature, i) => (
                 <Card
                   key={i}
@@ -281,15 +316,15 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Students */}
               <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
                 <div className="relative space-y-4">
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
                     <Users className="h-7 w-7 text-current" />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground">For Students</h3>
                   <p className="text-muted-foreground text-sm">Everything to excel in studies</p>
                   <div className="space-y-2 pt-2">
-                    {["Access digital notes", "AI study tools", "Track assignments", "Chat with peers", "Earn XP & compete", "Social networking"].map((item, i) => (
+                    {["Unlimited Notes Access", "AI-Powered Study Aids", "Smart Deadline Tracking", "Mid-Night Study Planning", "Gamified Learning & XP", "Campus Social Network", "Smart Search & Bookmarks"].map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <div className="h-1 w-1 rounded-full bg-slate-500/50" />
                         <span className="text-sm text-muted-foreground">{item}</span>
@@ -301,15 +336,15 @@ export default function HomePage() {
 
               {/* Teachers */}
               <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
                 <div className="relative space-y-4">
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-500">
                     <UserPlus className="h-7 w-7 text-current" />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground">For Teachers</h3>
                   <p className="text-muted-foreground text-sm">Tools to engage students</p>
                   <div className="space-y-2 pt-2">
-                    {["Upload study materials", "Send notices", "Chat with students", "Share resources"].map((item, i) => (
+                    {["Centralized Resource Sharing", "Instant Class Updates", "Direct Student Mentorship", "Exam Preparation Support", "Engagement Analytics"].map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <div className="h-1 w-1 rounded-full bg-slate-500/50" />
                         <span className="text-sm text-muted-foreground">{item}</span>
@@ -321,15 +356,15 @@ export default function HomePage() {
 
               {/* Admins */}
               <div className="group relative p-8 rounded-3xl bg-card/60 border border-border/50 hover:border-slate-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-500/10 hover:bg-secondary/40">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
                 <div className="relative space-y-4">
-                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-slate-400">
+                  <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-500">
                     <Building2 className="h-7 w-7 text-current" />
                   </div>
                   <h3 className="text-2xl font-bold text-foreground">For Institutes</h3>
                   <p className="text-muted-foreground text-sm">Administer & analyze</p>
                   <div className="space-y-2 pt-2">
-                    {["Student verification", "Send specific notices", "User management", "System analytics"].map((item, i) => (
+                    {["Verified Student Access", "Targeted Announcements", "Branch & Semester Mgmt", "Institute Performance Metrics", "Streamlined User Management"].map((item, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <div className="h-1 w-1 rounded-full bg-slate-500/50" />
                         <span className="text-sm text-muted-foreground">{item}</span>
@@ -350,7 +385,7 @@ export default function HomePage() {
           <div className="relative z-10 mx-auto max-w-4xl text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 text-primary hover:bg-primary/10 transition-colors cursor-default">
               <Sparkles className="h-4 w-4 text-inherit" />
-              <span className="text-sm font-semibold tracking-wide">Start Your Journey Today</span>
+              <span className="text-sm font-semibold tracking-wide">Empower Your Campus</span>
             </div>
 
             <h2 className="text-4xl md:text-5xl font-black leading-tight text-foreground">
