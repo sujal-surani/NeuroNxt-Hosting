@@ -237,7 +237,7 @@ export function NoticesPopup({ children }: NoticesPopupProps) {
             )}
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-96 p-0" align="end">
+        <PopoverContent className="w-96 p-0" align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
           <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950 dark:to-amber-950 p-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -263,8 +263,8 @@ export function NoticesPopup({ children }: NoticesPopupProps) {
                           variant="ghost"
                           size="sm"
                           className={`h-7 w-7 p-0 transition-all duration-200 ${noticeList.some(n => !n.unread)
-                              ? "text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                              : "text-muted-foreground/30 pointer-events-none"
+                            ? "text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                            : "text-muted-foreground/30 pointer-events-none"
                             }`}
                           onClick={clearViewedNotices}
                           disabled={!noticeList.some(n => !n.unread)}

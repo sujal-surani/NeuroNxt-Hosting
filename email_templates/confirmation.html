@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Confirm Your Email - NeuroNxt</title>
+    <style>
+        /* Reset */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        table {
+            border-collapse: separate;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+            width: 100%;
+        }
+
+        /* Container */
+        .email-wrapper {
+            max-width: 750px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: #000000;
+            text-decoration: none;
+            letter-spacing: -1px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+
+        .tagline {
+            font-size: 13px;
+            color: #6c757d;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* Main Content */
+        .content {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 48px 32px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f0f0f0;
+        }
+
+        .title {
+            margin: 0 0 16px 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: #000000;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .greeting {
+            margin: 0 0 24px 0;
+            font-size: 16px;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .text {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .highlight {
+            color: #000000;
+            font-weight: 600;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Button */
+        .button-wrapper {
+            margin: 36px 0;
+            text-align: center;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 16px 48px;
+            background: linear-gradient(135deg, #000000 0%, #2d3748 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-left: 3px solid #000000;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin: 32px 0 24px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .info-box p {
+            margin: 0;
+            font-size: 15px;
+            color: #212529;
+            line-height: 1.5;
+            font-weight: 600;
+        }
+
+        /* Steps */
+        .steps {
+            margin: 24px 0 32px 0;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-left: 8px;
+        }
+
+        .step-indicator {
+            flex-shrink: 0;
+            width: 8px;
+            height: 8px;
+            background: #000000;
+            border: 2px solid #000000;
+            border-radius: 50%;
+            margin-right: 16px;
+            margin-top: 8px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content p {
+            margin: 0;
+            font-size: 15px;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .step-content strong {
+            color: #212529;
+            font-weight: 600;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #e9ecef;
+            margin: 24px 0 32px 0;
+        }
+
+        /* Security Note */
+        .security-note {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 8px;
+            padding: 18px 22px;
+            margin: 24px 0 0 0;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+
+        .security-note p {
+            margin: 0;
+            font-size: 14px;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        .security-note strong {
+            color: #212529;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .footer-text {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .footer-link {
+            color: #000000;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer-brand {
+            margin: 16px 0 0 0;
+            font-size: 13px;
+            color: #adb5bd;
+        }
+
+        .footer-note {
+            margin: 8px 0 0 0;
+            font-size: 12px;
+            color: #ced4da;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                padding: 40px 16px;
+            }
+
+            .content {
+                padding: 36px 28px;
+                border-radius: 12px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .button {
+                padding: 14px 36px;
+                font-size: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .header {
+                margin-bottom: 36px;
+            }
+
+            .text,
+            .greeting {
+                font-size: 15px;
+            }
+
+            .step {
+                margin-bottom: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-wrapper">
+
+        <!-- Header -->
+        <div class="header">
+            <span class="logo">NeuroNxt</span>
+            <p class="tagline">YOUR ACADEMIC COMPANION</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <h1 class="title">Verify Your Email Address</h1>
+
+            <p class="greeting">
+                Welcome! <span class="highlight">{{ .Data.full_name }}</span>, You're one step closer to joining <span
+                    class="highlight">{{ .Data.institute_code }}</span>.
+            </p>
+
+            <p class="text">
+                To activate your account and get started, please confirm your email address by clicking the button
+                below.
+            </p>
+
+            <div class="button-wrapper">
+                <a href="{{ .ConfirmationURL }}" class="button">Confirm Email Address</a>
+            </div>
+
+            <div class="info-box">
+                <p>What happens next?</p>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-indicator"></div>
+                    <div class="step-content">
+                        <p><strong>Verify your email</strong> by clicking the confirmation button</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-indicator"></div>
+                    <div class="step-content">
+                        <p><strong>Wait for approval</strong> from your institute administrator</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-indicator"></div>
+                    <div class="step-content">
+                        <p><strong>Start learning</strong> once {{ .Data.institute_code }} approves your account</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="security-note">
+                <p><strong>Security Notice:</strong> This verification link expires in 24 hours. If you didn't sign up
+                    for NeuroNxt, please disregard this email.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="footer-text">
+                Need help? Contact your <a href="#" class="footer-link">institute administrator</a>
+            </p>
+            <p class="footer-brand">© 2024 NeuroNxt Inc. • All rights reserved</p>
+            <p class="footer-note">You received this email because you signed up for NeuroNxt</p>
+        </div>
+
+    </div>
+</body>
+
+</html>

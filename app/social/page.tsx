@@ -76,7 +76,12 @@ const SocialPage = () => {
   const [sentRequests, setSentRequests] = useState<Connection[]>([])
   const [connections, setConnections] = useState<Connection[]>([])
 
-  const [showAllClassmates, setShowAllClassmates] = useState(false)
+  // Pagination State
+  const [currentPublicPage, setCurrentPublicPage] = useState(1)
+  const [currentClassmatePage, setCurrentClassmatePage] = useState(1)
+  const [currentTeacherPage, setCurrentTeacherPage] = useState(1)
+  const ITEMS_PER_PAGE = 6
+
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [currentUserBranch, setCurrentUserBranch] = useState<string | null>(null)
   const [currentUserSemester, setCurrentUserSemester] = useState<string | null>(null)
@@ -191,7 +196,6 @@ const SocialPage = () => {
         setConnections(accepted)
         setFriendRequests(pendingReceived)
         setSentRequests(pendingSent)
-        setSentRequests(pendingSent)
       } else if (user) {
         // Even if no connections needed for teachers, we clear the arrays to be safe
         setConnections([])
@@ -234,11 +238,7 @@ const SocialPage = () => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase]) // Dependency changed from currentUser to supabase
-
-  // Filter users based on search query - DEPRECATED / UNUSED
-  // logic moved to specific filtered lists below
-
+  }, [supabase])
 
   const handleStudentInfoClick = (user: SocialUser) => {
     const studentData = {
@@ -270,7 +270,7 @@ const SocialPage = () => {
       s.name.toLowerCase().includes(searchLower) ||
       (s.enrollment && s.enrollment.toLowerCase().includes(searchLower)) ||
       (s.interests && s.interests.some(i => i.toLowerCase().includes(searchLower))) ||
-      s.branch.toLowerCase().includes(searchLower) || // Keeping existing specific logic just in case
+      s.branch.toLowerCase().includes(searchLower) ||
       s.semester.includes(searchLower)
 
     const matchesBranch = globalBranchFilter === "all" || s.branch === formatBranchName(globalBranchFilter)
@@ -296,9 +296,6 @@ const SocialPage = () => {
     // 3. Dropdown Filters (Teacher only)
     if (currentUserRole === 'teacher') {
       const matchesBranch = branchFilter === "all" || c.branch === formatBranchName(branchFilter)
-      // Note: Branch names stored in DB might be formatted differently than select values, 
-      // but formatBranchName usage here suggests standardization.
-
       const matchesSemester = semesterFilter === "all" || c.semester === semesterFilter
       return matchesSearch && matchesBranch && matchesSemester
     }
@@ -310,6 +307,16 @@ const SocialPage = () => {
   const filteredTeachers = teachers.filter((t) =>
     t.name?.toLowerCase().includes(teacherSearch.toLowerCase())
   )
+
+  // PAGINATION LOGIC
+  const paginatedPublicStudents = filteredPublicStudents.slice((currentPublicPage - 1) * ITEMS_PER_PAGE, currentPublicPage * ITEMS_PER_PAGE)
+  const totalPublicPages = Math.ceil(filteredPublicStudents.length / ITEMS_PER_PAGE)
+
+  const paginatedClassmates = filteredClassmates.slice((currentClassmatePage - 1) * ITEMS_PER_PAGE, currentClassmatePage * ITEMS_PER_PAGE)
+  const totalClassmatePages = Math.ceil(filteredClassmates.length / ITEMS_PER_PAGE)
+
+  const paginatedTeachers = filteredTeachers.slice((currentTeacherPage - 1) * ITEMS_PER_PAGE, currentTeacherPage * ITEMS_PER_PAGE)
+  const totalTeacherPages = Math.ceil(filteredTeachers.length / ITEMS_PER_PAGE)
 
   const openPersonalChat = (person: SocialUser) => {
     router.push(`/chat?person=${encodeURIComponent(person.name)}&id=${person.id}`)
@@ -428,7 +435,7 @@ const SocialPage = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopNavbar />
 
-        <main className="flex-1 overflow-y-auto p-4">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto w-full space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -443,7 +450,7 @@ const SocialPage = () => {
               {currentUserRole !== 'teacher' && (
                 <>
                   <Card className="border shadow-none">
-                    <CardContent className="px-3 py-1 flex items-center justify-between">
+                    <CardContent className="px-6 py-2 flex items-center justify-between">
                       <div className="text-base text-muted-foreground">Connections</div>
                       <div className="text-2xl font-bold">{connections.length}</div>
                     </CardContent>
@@ -451,14 +458,14 @@ const SocialPage = () => {
                 </>
               )}
               <Card className="border shadow-none">
-                <CardContent className="px-3 py-1 flex items-center justify-between">
+                <CardContent className="px-6 py-2 flex items-center justify-between">
                   <div className="text-base text-muted-foreground">Teachers</div>
                   <div className="text-2xl font-bold">{teachers.length}</div>
                 </CardContent>
               </Card>
               {currentUserRole !== 'teacher' && (
                 <Card className="border shadow-none">
-                  <CardContent className="px-3 py-1 flex items-center justify-between">
+                  <CardContent className="px-6 py-2 flex items-center justify-between">
                     <div className="text-base text-muted-foreground">Pending Requests</div>
                     <div className="text-2xl font-bold">{friendRequests.length}</div>
                   </CardContent>
@@ -520,53 +527,77 @@ const SocialPage = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
+                <div className="space-y-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                    {filteredPublicStudents.slice(0, 21).map((s) => (
-                      <Card key={s.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleStudentInfoClick(s)}>
-                        <CardContent className="px-3 py-2">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="w-8 h-8 flex-shrink-0">
-                              <AvatarImage src={s.avatar} alt={s.name} />
-                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                {getInitials(s.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium text-base truncate" title={s.name}>{s.name}</div>
-                              <div className="text-sm text-muted-foreground truncate" title={`${s.branch} • ${s.semester}`}>
-                                {s.branch} • {s.semester}
-                              </div>
+                    {paginatedPublicStudents.map((s) => (
+                      <Card key={s.id} className="group transition-all duration-300 cursor-pointer" onClick={() => handleStudentInfoClick(s)}>
+                        <CardContent className="p-4 flex items-center gap-4">
+                          <Avatar className="w-12 h-12 border-2 border-border group-hover:border-primary transition-colors">
+                            <AvatarImage src={s.avatar} alt={s.name} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                              {getInitials(s.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0 grid gap-0.5">
+                            <div className="font-bold text-base truncate leading-none" title={s.name}>{s.name}</div>
+                            <div className="text-sm text-muted-foreground truncate font-medium" title={`${s.branch} • ${s.semester}`}>
+                              {s.branch} • {s.semester}
                             </div>
-                            <div className="ml-auto inline-flex items-center gap-2">
-                              {isConnected(s.id) ? (
-                                <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
-                                  <MessageCircle className="w-3 h-3" />
+                          </div>
+                          <div className="flex-shrink-0">
+                            {isConnected(s.id) ? (
+                              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full cursor-pointer" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
+                                <MessageCircle className="w-5 h-5" />
+                              </Button>
+                            ) : isRequestSent(s.id) ? (
+                              <Badge variant="outline" className="text-xs h-7 px-3 text-muted-foreground bg-muted/50">Requested</Badge>
+                            ) : isRequestReceived(s.id) ? (
+                              <Badge variant="secondary" className="text-xs h-7 px-2">Pending Accept</Badge>
+                            ) : (
+                              currentUserRole === 'teacher' ? (
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full cursor-pointer" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
+                                  <MessageCircle className="w-5 h-5" />
                                 </Button>
-                              ) : isRequestSent(s.id) ? (
-                                <Badge variant="secondary" className="text-xs">Requested</Badge>
-                              ) : isRequestReceived(s.id) ? (
-                                <Badge variant="secondary" className="text-xs">Pending Accept</Badge>
                               ) : (
-                                currentUserRole === 'teacher' ? (
-                                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(s); }}>
-                                    <MessageCircle className="w-3 h-3" />
-                                  </Button>
-                                ) : (
-                                  <Button size="sm" onClick={(e) => { e.stopPropagation(); sendConnectRequest(s); }}>Connect</Button>
-                                )
-                              )}
-                            </div>
+                                <Button size="sm" className="h-8 text-xs px-4 font-medium rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={(e) => { e.stopPropagation(); sendConnectRequest(s); }}>Connect</Button>
+                              )
+                            )}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
-                    {filteredPublicStudents.length === 0 && (
-                      <div className="text-sm text-muted-foreground">No students found</div>
+                    {paginatedPublicStudents.length === 0 && (
+                      <div className="text-sm text-muted-foreground col-span-2 text-center py-4">No students found matching your criteria.</div>
                     )}
                   </div>
-                </div>
 
+                  {/* Pagination Controls */}
+                  {totalPublicPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-4 pt-2 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPublicPage(p => Math.max(1, p - 1))}
+                        disabled={currentPublicPage === 1}
+                        className="h-8 w-8 p-0"
+                      >
+                        &lt;
+                      </Button>
+                      <span className="text-sm font-medium px-2">
+                        {currentPublicPage} <span className="text-muted-foreground">/ {totalPublicPages}</span>
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPublicPage(p => Math.min(totalPublicPages, p + 1))}
+                        disabled={currentPublicPage === totalPublicPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        &gt;
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -630,57 +661,76 @@ const SocialPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
-                    {(showAllClassmates ? filteredClassmates : filteredClassmates.slice(0, 12)).map((c) => (
-                      <Card key={c.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleStudentInfoClick(c)}>
-                        <CardContent className="px-3 py-2">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="w-8 h-8 flex-shrink-0">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {paginatedClassmates.map((c) => (
+                        <Card key={c.id} className="group transition-all duration-300 cursor-pointer" onClick={() => handleStudentInfoClick(c)}>
+                          <CardContent className="p-4 flex items-center gap-4">
+                            <Avatar className="w-12 h-12 border-2 border-border group-hover:border-primary transition-colors">
                               <AvatarImage src={c.avatar} alt={c.name} />
-                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                 {getInitials(c.name)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium text-base truncate" title={c.name}>{c.name}</div>
-                              <div className="text-sm text-muted-foreground truncate" title={`${c.branch} • ${c.semester}`}>
+                            <div className="flex-1 min-w-0 grid gap-0.5">
+                              <div className="font-bold text-base truncate leading-none" title={c.name}>{c.name}</div>
+                              <div className="text-sm text-muted-foreground truncate font-medium" title={`${c.branch} • ${c.semester}`}>
                                 {c.branch} • {c.semester}
                               </div>
                             </div>
-                            <div className="ml-auto inline-flex items-center gap-2">
+                            <div className="flex-shrink-0">
                               {isConnected(c.id) ? (
-                                <Button variant="outline" size="sm" className="h-8" onClick={(e) => { e.stopPropagation(); openPersonalChat(c); }}>
-                                  <MessageCircle className="w-3 h-3" />
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full cursor-pointer" onClick={(e) => { e.stopPropagation(); openPersonalChat(c); }}>
+                                  <MessageCircle className="w-5 h-5" />
                                 </Button>
                               ) : isRequestSent(c.id) ? (
-                                <Badge variant="secondary" className="text-xs">Requested</Badge>
+                                <Badge variant="outline" className="text-xs h-7 px-3 text-muted-foreground bg-muted/50">Requested</Badge>
                               ) : isRequestReceived(c.id) ? (
-                                <Badge variant="secondary" className="text-xs">Pending Accept</Badge>
+                                <Badge variant="secondary" className="text-xs h-7 px-2">Pending Accept</Badge>
                               ) : (
                                 currentUserRole === 'teacher' ? (
-                                  <Button variant="outline" size="sm" className="h-8" onClick={(e) => { e.stopPropagation(); openPersonalChat(c); }}>
-                                    <MessageCircle className="w-3 h-3" />
+                                  <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full cursor-pointer" onClick={(e) => { e.stopPropagation(); openPersonalChat(c); }}>
+                                    <MessageCircle className="w-5 h-5" />
                                   </Button>
                                 ) : (
-                                  <Button size="sm" className="h-8 px-3" onClick={(e) => { e.stopPropagation(); sendConnectRequest(c); }}>Connect</Button>
+                                  <Button size="sm" className="h-8 text-xs px-4 font-medium rounded-full shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={(e) => { e.stopPropagation(); sendConnectRequest(c); }}>Connect</Button>
                                 )
                               )}
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    {filteredClassmates.length === 0 && (
-                      <div className="text-sm text-muted-foreground col-span-full text-center py-4">No classmates found</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {paginatedClassmates.length === 0 && (
+                        <div className="text-sm text-muted-foreground col-span-2 text-center py-4">No classmates found</div>
+                      )}
+                    </div>
+                    {/* Pagination Controls */}
+                    {totalClassmatePages > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-4 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentClassmatePage(p => Math.max(1, p - 1))}
+                          disabled={currentClassmatePage === 1}
+                          className="h-8 w-8 p-0"
+                        >
+                          &lt;
+                        </Button>
+                        <span className="text-sm font-medium px-2">
+                          {currentClassmatePage} <span className="text-muted-foreground">/ {totalClassmatePages}</span>
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentClassmatePage(p => Math.min(totalClassmatePages, p + 1))}
+                          disabled={currentClassmatePage === totalClassmatePages}
+                          className="h-8 w-8 p-0"
+                        >
+                          &gt;
+                        </Button>
+                      </div>
                     )}
                   </div>
-                  {filteredClassmates.length > 12 && (
-                    <div className="flex justify-center mt-3">
-                      <Button variant="outline" size="sm" onClick={() => setShowAllClassmates((v) => !v)}>
-                        {showAllClassmates ? "Show less" : `Show all (${filteredClassmates.length})`}
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -704,32 +754,58 @@ const SocialPage = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-2 scrollbar-thin">
-                    {filteredTeachers.map((t) => (
-                      <Card key={t.id} className="hover:shadow-sm transition-shadow">
-                        <CardContent className="px-3 py-2">
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="w-8 h-8 flex-shrink-0">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {paginatedTeachers.map((t) => (
+                        <Card key={t.id} className="group transition-all duration-300">
+                          <CardContent className="p-4 flex items-center gap-4">
+                            <Avatar className="w-12 h-12 border-2 border-border group-hover:border-primary transition-colors">
                               <AvatarImage src={t.avatar} alt={t.name} />
-                              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                              <AvatarFallback className="bg-primary/10 text-primary font-medium">
                                 {getInitials(t.name)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium text-base truncate" title={t.name}>{t.name}</div>
-                              <div className="text-sm text-muted-foreground truncate" title={t.branch}>{t.branch}</div>
+                            <div className="flex-1 min-w-0 grid gap-0.5">
+                              <div className="font-bold text-base truncate leading-none" title={t.name}>{t.name}</div>
+                              <div className="text-sm text-muted-foreground truncate font-medium" title={t.branch}>{t.branch}</div>
                             </div>
-                            <div className="ml-auto inline-flex items-center gap-2">
-                              <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); openPersonalChat(t); }}>
-                                <MessageCircle className="w-3 h-3" />
+                            <div className="flex-shrink-0">
+                              <Button variant="ghost" size="icon" className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full cursor-pointer" onClick={(e) => { e.stopPropagation(); openPersonalChat(t); }}>
+                                <MessageCircle className="w-5 h-5" />
                               </Button>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                    {filteredTeachers.length === 0 && (
-                      <div className="text-sm text-muted-foreground col-span-full text-center py-4">No teachers found</div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {paginatedTeachers.length === 0 && (
+                        <div className="text-sm text-muted-foreground col-span-2 text-center py-4">No teachers found</div>
+                      )}
+                    </div>
+                    {/* Pagination Controls */}
+                    {totalTeacherPages > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-4 pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentTeacherPage(p => Math.max(1, p - 1))}
+                          disabled={currentTeacherPage === 1}
+                          className="h-8 w-8 p-0"
+                        >
+                          &lt;
+                        </Button>
+                        <span className="text-sm font-medium px-2">
+                          {currentTeacherPage} <span className="text-muted-foreground">/ {totalTeacherPages}</span>
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentTeacherPage(p => Math.min(totalTeacherPages, p + 1))}
+                          disabled={currentTeacherPage === totalTeacherPages}
+                          className="h-8 w-8 p-0"
+                        >
+                          &gt;
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -776,66 +852,14 @@ const SocialPage = () => {
                                       <div className="text-sm text-muted-foreground truncate" title={`${r.requester?.branch} • ${r.requester?.semester}`}>
                                         {r.requester?.branch} • {r.requester?.semester}
                                       </div>
-                                      <div className="text-xs text-muted-foreground mt-1 truncate" title={r.created_at}>
-                                        {formatShortAgo(r.created_at)}
-                                      </div>
                                     </div>
-                                    <div className="ml-auto inline-flex items-center gap-2">
-                                      <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => acceptFriendRequest(r.id)}>
-                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                        Accept
+                                    <div className="flex gap-2">
+                                      <Button size="icon" variant="outline" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => acceptFriendRequest(r.id)}>
+                                        <CheckCircle className="w-4 h-4" />
                                       </Button>
-                                      <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => denyFriendRequest(r.id)}>
-                                        <XCircle className="w-3 h-3 mr-1" />
-                                        Deny
+                                      <Button size="icon" variant="outline" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => denyFriendRequest(r.id)}>
+                                        <XCircle className="w-4 h-4" />
                                       </Button>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-xl">Sent Requests</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {sentRequests.length === 0 ? (
-                        <div className="text-center py-6">
-                          <h3 className="text-lg font-medium mb-1">No pending sent requests</h3>
-                          <p className="text-muted-foreground">Any requests you send will appear here until accepted.</p>
-                        </div>
-                      ) : (
-                        <div className="max-h-96 overflow-y-auto pr-2 scrollbar-none hover:scrollbar-thin scrollbar-track-slate-100 scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 scrollbar-thumb-rounded-full transition-all duration-300"
-                          style={{
-                            scrollbarWidth: "thin",
-                            scrollbarColor: "rgb(203 213 225) transparent",
-                          }}>
-                          <div className="space-y-3">
-                            {sentRequests.map((r) => (
-                              <Card key={r.id} className="hover:shadow-sm transition-shadow">
-                                <CardContent className="px-3 py-2">
-                                  <div className="flex items-center gap-2.5">
-                                    <Avatar className="w-8 h-8 flex-shrink-0">
-                                      <AvatarImage src={r.recipient?.avatar} alt={r.recipient?.name} />
-                                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                                        {getInitials(r.recipient?.name || '??')}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="min-w-0 flex-1">
-                                      <div className="font-medium text-base truncate" title={r.recipient?.name}>{r.recipient?.name}</div>
-                                      <div className="text-sm text-muted-foreground truncate" title={`${r.recipient?.branch} • ${r.recipient?.semester}`}>
-                                        {r.recipient?.branch} • {r.recipient?.semester}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="secondary" className="text-xs">Pending</Badge>
-                                      <Badge variant="outline" className="text-xs text-muted-foreground">Sent {formatShortAgo(r.created_at)}</Badge>
                                     </div>
                                   </div>
                                 </CardContent>
@@ -849,16 +873,16 @@ const SocialPage = () => {
                 </div>
               )}
             </div>
-            {/* end grid */}
           </div>
         </main>
+
+        <StudentProfilePopup
+          isOpen={showStudentInfo}
+          onClose={() => setShowStudentInfo(false)}
+          student={selectedStudentInfo}
+        />
       </div>
-      <StudentProfilePopup
-        student={selectedStudentInfo}
-        isOpen={showStudentInfo}
-        onClose={() => setShowStudentInfo(false)}
-      />
-    </div >
+    </div>
   )
 }
 
