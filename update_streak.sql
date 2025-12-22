@@ -14,10 +14,12 @@ as $$
 declare
   user_last_active timestamptz;
   current_streak int;
+  current_max_streak int;
+  new_streak int;
 begin
   -- Get current last_active and streak
-  select last_active, study_streak
-  into user_last_active, current_streak
+  select last_active, study_streak, max_streak
+  into user_last_active, current_streak, current_max_streak
   from profiles
   where id = auth.uid();
 
@@ -26,12 +28,18 @@ begin
     return;
   end if;
 
+  -- Initialize max_streak if null
+  if current_max_streak is null then
+    current_max_streak := 0;
+  end if;
+
   -- If last_active is null, set to now and streak to 1
   if user_last_active is null then
     update profiles
     set 
       last_active = now(),
-      study_streak = 1
+      study_streak = 1,
+      max_streak = GREATEST(1, current_max_streak)
     where id = auth.uid();
     return;
   end if;
@@ -46,10 +54,13 @@ begin
   -- Check if last active was yesterday
   elsif date(user_last_active) = date(now() - interval '1 day') then
     -- Streak continues!
+    new_streak := coalesce(current_streak, 0) + 1;
+    
     update profiles
     set 
       last_active = now(),
-      study_streak = coalesce(current_streak, 0) + 1
+      study_streak = new_streak,
+      max_streak = GREATEST(new_streak, current_max_streak)
     where id = auth.uid();
   
   -- Otherwise, streak broken
@@ -58,6 +69,7 @@ begin
     set 
       last_active = now(),
       study_streak = 1
+      -- max_streak remains unchanged as it's the personal best
     where id = auth.uid();
   end if;
 end;

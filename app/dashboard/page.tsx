@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [userBranch, setUserBranch] = useState("")
   const [userSemester, setUserSemester] = useState("")
   const [studyStreak, setStudyStreak] = useState(0)
+  const [maxStreak, setMaxStreak] = useState(0)
   const [totalNotesCount, setTotalNotesCount] = useState(0)
 
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function Dashboard() {
         // Fetch User Profile for Branch
         const { data: profile } = await supabase
           .from('profiles')
-          .select('branch, semester, is_onboarded, study_streak')
+          .select('branch, semester, is_onboarded, study_streak, max_streak')
           .eq('id', user.id)
           .maybeSingle()
 
@@ -98,6 +99,7 @@ export default function Dashboard() {
           setUserBranch(profile.branch || "")
           setUserSemester(profile.semester || "")
           setStudyStreak(profile.study_streak || 0)
+          setMaxStreak(profile.max_streak || 0)
         } else {
           // Handle case where profile doesn't exist yet (shouldn't happen with triggers, but safe fallback)
         }
@@ -108,12 +110,13 @@ export default function Dashboard() {
         // Re-fetch profile to get updated streak if needed (optional, but ensures UI is sync)
         const { data: updatedProfile } = await supabase
           .from('profiles')
-          .select('study_streak')
+          .select('study_streak, max_streak')
           .eq('id', user.id)
           .maybeSingle()
 
         if (updatedProfile) {
           setStudyStreak(updatedProfile.study_streak || 0)
+          setMaxStreak(updatedProfile.max_streak || 0)
         }
 
         // Fetch Total Notes Count for Branch & Semester
@@ -383,7 +386,9 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{studyStreak} Days</div>
-                  <p className="text-xs text-muted-foreground">Keep it up!</p>
+                  <p className="text-xs text-muted-foreground">
+                    Personal best : <span className="font-medium text-emerald-500">{maxStreak}</span> days
+                  </p>
                 </CardContent>
               </Card>
 

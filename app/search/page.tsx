@@ -1045,7 +1045,7 @@ export default function SearchPage() {
 
         {/* Note Viewer Dialog */}
         <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-          <DialogContent className="w-[65vw] max-w-[65vw] h-[76vh] max-h-[80vh] overflow-auto flex flex-col p-0 bg-background border border-border shadow-2xl rounded-xl" style={{ maxWidth: '65vw', width: '65vw' }}>
+          <DialogContent className="w-[90vw] max-w-[90vw] h-[76vh] max-h-[80vh] overflow-auto flex flex-col p-0 bg-background border border-border shadow-2xl rounded-xl" style={{ maxWidth: '90vw', width: '90vw' }}>
             <DialogHeader className="sticky top-0 z-20 border-b border-border bg-card/70 backdrop-blur supports-[backdrop-filter]:bg-card/50">
               <div className="p-6">
                 <div className="flex items-center justify-between min-h-[84px]">
