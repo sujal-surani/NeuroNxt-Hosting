@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { TopNavbar } from "@/components/top-navbar"
@@ -131,6 +131,11 @@ export default function NotesPage() {
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+  const fetchIdRef = useRef(0)
+
+  const [totalNotesStats, setTotalNotesStats] = useState(0)
+  const [branchNotesStats, setBranchNotesStats] = useState(0)
+  const [userBranchName, setUserBranchName] = useState("")
 
   // Check auth and set user role
   useEffect(() => {
@@ -140,6 +145,51 @@ export default function NotesPage() {
         setUserId(user.id)
         setUserName(user.user_metadata?.full_name || "User")
         setUserRole(user.user_metadata?.role || "student")
+
+        // Fetch User Profile for Branch and Semester Defaults
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('branch, semester')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (profile) {
+          if (profile.branch) {
+            const formattedBranch = profile.branch
+              .split('-')
+              .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')
+
+            setUserBranchName(formattedBranch)
+            // Check if this formatted branch is in our list of branches (optional but good for safety)
+            // For now, we trust it matches or rely on the fact that "all" will be overridden
+            setSelectedBranch(formattedBranch)
+
+            // Fetch Branch Notes Stats
+            let branchQuery = supabase.from('notes').select('*', { count: 'exact', head: true }).eq('branch', formattedBranch)
+            if (user.user_metadata?.institute_code) {
+              branchQuery = branchQuery.eq('institute_code', user.user_metadata.institute_code)
+            }
+            const { count: bCount } = await branchQuery
+            if (bCount !== null) setBranchNotesStats(bCount)
+          }
+
+          if (profile.semester) {
+            // Extract number from "Sem 3" or similar
+            const semesterMatch = profile.semester.toString().match(/\d+/)
+            if (semesterMatch) {
+              setSelectedSemester(semesterMatch[0])
+            }
+          }
+        }
+
+        // Fetch Total Notes Stats (Institute Wide)
+        let totalQuery = supabase.from('notes').select('*', { count: 'exact', head: true })
+        if (user.user_metadata?.institute_code) {
+          totalQuery = totalQuery.eq('institute_code', user.user_metadata.institute_code)
+        }
+        const { count: totalCount } = await totalQuery
+        if (totalCount !== null) setTotalNotesStats(totalCount)
       }
     }
     checkUser()
@@ -153,6 +203,7 @@ export default function NotesPage() {
   }, [searchTerm])
 
   const fetchNotes = async (pageNumber = 0, isLoadMore = false) => {
+    const currentFetchId = ++fetchIdRef.current
     if (!isLoadMore) setIsLoading(true)
 
     // Build query
@@ -168,6 +219,10 @@ export default function NotesPage() {
       query = query.eq('branch', selectedBranch)
     }
     if (selectedSemester !== "all") {
+      // Robustly parse the semester in case it's not already a number strict
+      // The state is string "all" or "1", "2" etc.
+      // The DB expects number.
+      // The filter "all" is handled above. This block handles "1", "2".
       query = query.eq('semester', parseInt(selectedSemester))
     }
     if (selectedDifficulty !== "all") {
@@ -194,10 +249,6 @@ export default function NotesPage() {
       case "likes":
         query = query.order('likes', { ascending: false })
         break
-      // Rating and Saved sorting are tricky server-side without joins/aggregates. 
-      // For MVP, we might keep client-side sort for "Saved" or just filter saved first if "Saved" sort is picked?
-      // Let's handle "Saved" sort by just fetching normally and filtering client side for now, OR:
-      // If "Saved" tab/sort is active, we should probably modify the query to ONLY fetch saved notes if showSavedOnly is on.
       default:
         query = query.order('created_at', { ascending: false })
     }
@@ -208,6 +259,9 @@ export default function NotesPage() {
     query = query.range(from, to)
 
     const { data: notesData, error: notesError } = await query
+
+    // Guard against race conditions: if a new request started, ignore this one
+    if (currentFetchId !== fetchIdRef.current) return
 
     if (notesError) {
       console.error('Error fetching notes:', notesError)
@@ -221,15 +275,6 @@ export default function NotesPage() {
     } else {
       setHasMore(true)
     }
-
-    // Fetch user interactions (Likes/Saves) - We do this once or per batch?
-    // Doing it per batch is more efficient than fetching ALL user likes ever.
-    // But currently we have a Set<number> for all user likes. 
-    // Let's keep the existing "fetch all user interactions" logic separate or ensure we have it.
-    // For now, assuming userInteractions are already fetched or we fetch them for these specific IDs?
-    // To keep it simple and consistent with previous "Set" logic, let's just make sure we have the sets.
-    // If we paginate, fetching ALL likes for a user might be okay (IDs are small). 
-    // Let's keep the `fetchUserInteractions` separate.
 
     // Map notes
     const mappedNotes: Note[] = notesData.map((item: any) => ({
@@ -1047,44 +1092,33 @@ export default function NotesPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               {/* 1. Total Notes */}
               <Card className="border border-border bg-card hover:shadow-sm transition">
-                <CardContent className="p-3 h-16 flex items-center gap-3">
+                <CardContent className="py-3 pr-3 pl-5 h-16 flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-2xs text-muted-foreground">Total Notes</div>
-                    <div className="text-base font-semibold leading-tight">{notes.length}</div>
+                    <div className="text-base font-semibold leading-tight">{totalNotesStats}</div>
                   </div>
                 </CardContent>
               </Card>
               {/* 2. My Department */}
               <Card className="border border-border bg-card hover:shadow-sm transition">
-                <CardContent className="p-3 h-16 flex items-center gap-3">
+                <CardContent className="py-3 pr-3 pl-5 h-16 flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <BookOpen className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-2xs text-muted-foreground">
-                      {"My Department "}
-                      {(() => {
-                        const branchLabel = selectedBranch === "all" ? (notes[0]?.branch || "") : selectedBranch
-                        const abbr = getBranchAbbreviation(branchLabel)
-                        return abbr ? `(${abbr})` : ""
-                      })()}
+                      My Department ({getBranchAbbreviation(userBranchName || "CM")})
                     </div>
-                    <div className="text-base font-semibold leading-tight">
-                      {(() => {
-                        const currentBranch = selectedBranch === "all" ? notes[0]?.branch : selectedBranch
-                        return notes.filter((n) => n.branch === currentBranch).length
-                      })()}
-                    </div>
-                    {/* removed full branch label under the value per request */}
+                    <div className="text-base font-semibold leading-tight">{branchNotesStats}</div>
                   </div>
                 </CardContent>
               </Card>
               {/* 3. Completed */}
               <Card className="border border-border bg-card hover:shadow-sm transition">
-                <CardContent className="p-3 h-16 flex items-center gap-3">
+                <CardContent className="py-3 pr-3 pl-5 h-16 flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <CircleCheck className="h-4 w-4" />
                   </div>
@@ -1096,7 +1130,7 @@ export default function NotesPage() {
               </Card>
               {/* 4. Saved */}
               <Card className="border border-border bg-card hover:shadow-sm transition">
-                <CardContent className="p-3 h-16 flex items-center gap-3">
+                <CardContent className="py-3 pr-3 pl-5 h-16 flex items-center gap-3">
                   <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <Bookmark className="h-4 w-4" />
                   </div>

@@ -176,6 +176,15 @@ export default function TasksPage() {
     return due.getTime() < today.getTime()
   }).length
 
+  const dueTasksCount = tasks.filter((task) => {
+    if (task.completed) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(task.dueDate)
+    due.setHours(0, 0, 0, 0)
+    return due.getTime() <= today.getTime()
+  }).length
+
   const filteredTasks = (() => {
     const filtered =
       activeTab === "all"
@@ -289,7 +298,7 @@ export default function TasksPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-card border-border shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Total Tasks</CardTitle>
@@ -312,6 +321,19 @@ export default function TasksPage() {
                     {Math.round(completionRate)}%
                   </div>
                   <Progress value={completionRate} className="h-2 mt-2" />
+                </CardContent>
+              </Card>
+              <Card className="bg-card border-border shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Due Tasks
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-foreground">{dueTasksCount}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tasks due today or overdue
+                  </p>
                 </CardContent>
               </Card>
               <Card className="bg-card border-border shadow-sm">

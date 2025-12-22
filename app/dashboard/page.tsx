@@ -119,29 +119,22 @@ export default function Dashboard() {
           setMaxStreak(updatedProfile.max_streak || 0)
         }
 
-        // Fetch Total Notes Count for Branch & Semester
-        if (profile?.branch && profile?.semester) {
-          // Robust parsing: extract first number from string "Sem 3", "3rd", "3" etc.
-          const semesterMatch = profile.semester.toString().match(/\d+/)
-          const semesterInt = semesterMatch ? parseInt(semesterMatch[0]) : NaN
+        // Fetch Total Notes Count (Institute Wide)
+        let notesQuery = supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
 
-          // Normalize Branch: "computer-technology" -> "Computer Technology" to match Notes table
-          const formattedBranch = profile.branch
-            .split('-')
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ')
+        // If user has an institute code, filter by it. Otherwise, get all notes (or handle as preferred)
+        // Assuming public notes or mixed content if no institute code, but usually users belong to an institute.
+        // If we want to restrict to "My Institute" logic:
+        if (user.user_metadata?.institute_code) {
+          notesQuery = notesQuery.eq('institute_code', user.user_metadata.institute_code)
+        }
 
-          if (!isNaN(semesterInt)) {
-            const { count: total, error: totalError } = await supabase
-              .from('notes')
-              .select('*', { count: 'exact', head: true })
-              .eq('branch', formattedBranch) // Use formatted branch
-              .eq('semester', semesterInt)
+        const { count: total, error: totalError } = await notesQuery
 
-            if (!totalError && total !== null) {
-              setTotalNotesCount(total)
-            }
-          }
+        if (!totalError && total !== null) {
+          setTotalNotesCount(total)
         }
 
         // Fetch Notes Studied Count
@@ -415,16 +408,6 @@ export default function Dashboard() {
                     <div className="text-3xl font-bold">{notesStudiedCount}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       Total Notes: {totalNotesCount}
-                      {userBranch && userSemester && (
-                        <span className="ml-1">
-                          ( {(() => {
-                            const b = userBranch || ""
-                            let abbr = b.split(/[\s-]+/).map(w => w[0]).join("").toUpperCase()
-                            if (b === "Computer Technology" || b.toLowerCase() === "computer-technology") abbr = "CM"
-                            return `${abbr} - Sem ${userSemester}`
-                          })()} )
-                        </span>
-                      )}
                     </p>
                   </div>
                 </CardContent>
